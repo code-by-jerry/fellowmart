@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin-server";
+import { isPlatformAdminProfile } from "@/lib/auth/platform-admin";
 import { normalizeTenantSlug } from "@/lib/utils/tenant";
 import { redirectTo } from "@/lib/route-utils";
 
@@ -39,7 +40,13 @@ export async function POST(request: Request) {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    const isGlobalAdmin = (user?.user_metadata as any)?.role === "admin";
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, email")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const isGlobalAdmin = isPlatformAdminProfile(profile);
 
     if (membershipError || (!membership && !isGlobalAdmin)) {
       return redirectTo(request, "/admin/dashboard/stores?error=Access denied");

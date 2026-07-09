@@ -1,72 +1,108 @@
-import { type NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
+import { type NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { isPlatformAdminEmail } from "@/lib/auth/platform-admin";
 
-export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabase = createServerClient(
+function createCustomerClient(
+  request: NextRequest,
+  onCookies: (cookies: { name: string; value: string; options?: object }[]) => void,
+) {
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value)
-          )
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          onCookies(cookiesToSet);
         },
       },
-    }
-  )
+    },
+  );
+}
 
-  // Refresh the session (keeps auth cookies alive)
-  const { data: { user } } = await supabase.auth.getUser()
+function createAdminSessionClient(
+  request: NextRequest,
+  onCookies: (cookies: { name: string; value: string; options?: object }[]) => void,
+) {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          onCookies(cookiesToSet);
+        },
+      },
+      cookieOptions: {
+        name: "sb-admin-auth-token",
+      },
+    },
+  );
+}
 
-  const path = request.nextUrl.pathname
+export async function proxy(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request });
+  const path = request.nextUrl.pathname;
 
-  // Protect /admin routes (except login & register) — fast check, no DB needed
-  if (
-    path.startsWith('/admin') &&
-    !path.startsWith('/admin/login') &&
-    !path.startsWith('/admin/register')
-  ) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
-    }
-    // Fine-grained role check (admin vs customer) happens inside the layout
+  const applyCookies = (
+    cookiesToSet: { name: string; value: string; options?: object }[],
+  ) => {
+    cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+    supabaseResponse = NextResponse.next({ request });
+    cookiesToSet.forEach(({ name, value, options }) =>
+      supabaseResponse.cookies.set(name, value, options),
+    );
+  };
+
+  // Refresh customer session on all routes
+  const customerClient = createCustomerClient(request, applyCookies);
+  await customerClient.auth.getUser();
+
+  // Protect /business routes (login handled on page; refresh session here)
+  if (path.startsWith("/business")) {
+    await customerClient.auth.getUser();
   }
 
-  // Protect customer routes
-  if (
-    !path.startsWith('/admin') && 
-    path !== '/' && 
-    !path.startsWith('/login') && 
-    !path.startsWith('/signup') && 
-    !path.startsWith('/auth')
-  ) {
+  // Protect /admin routes (login only is public)
+  if (path.startsWith("/admin") && !path.startsWith("/admin/login")) {
+    const adminClient = createAdminSessionClient(request, applyCookies);
+    const {
+      data: { user },
+    } = await adminClient.auth.getUser();
+
     if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
+
+    if (!isPlatformAdminEmail(user.email)) {
+      const signOutResponse = NextResponse.redirect(
+        new URL(
+          "/admin/login?error=Access denied. Admin accounts only.",
+          request.url,
+        ),
+      );
+      await adminClient.auth.signOut();
+      return signOutResponse;
     }
   }
 
   // Redirect /dashboard shortcut → /admin/dashboard
-  if (path.startsWith('/dashboard')) {
+  if (path.startsWith("/dashboard")) {
     return NextResponse.redirect(
-      new URL(path.replace('/dashboard', '/admin/dashboard'), request.url)
-    )
+      new URL(path.replace("/dashboard", "/admin/dashboard"), request.url),
+    );
   }
 
-  return supabaseResponse
+  return supabaseResponse;
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-}
+};

@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { getSiteSettings } from "@/lib/site-config-server";
 import { createAdminClient } from "@/utils/supabase/admin-server";
+import { getAdminDataClient } from "@/lib/admin/auth";
+import { AdminPage } from "@/components/admin/admin-ui";
 
 export default async function DashboardPage() {
   const settings = await getSiteSettings();
@@ -23,16 +25,17 @@ export default async function DashboardPage() {
     redirect("/admin/login");
   }
 
-  const [productCountResult, activeProductCountResult] = await Promise.all([
-    supabase.from("products").select("*", { count: "exact", head: true }),
-    supabase
-      .from("products")
-      .select("*", { count: "exact", head: true })
-      .eq("is_active", true),
+  const db = await getAdminDataClient();
+
+  const [productCountResult, activeProductCountResult, customerCountResult] = await Promise.all([
+    db.from("products").select("*", { count: "exact", head: true }),
+    db.from("products").select("*", { count: "exact", head: true }).eq("is_active", true),
+    db.from("profiles").select("*", { count: "exact", head: true }).eq("role", "customer"),
   ]);
 
   const totalProducts = productCountResult.count ?? 0;
   const activeProducts = activeProductCountResult.count ?? 0;
+  const totalCustomers = customerCountResult.count ?? 0;
 
   const statCards = [
     {
@@ -55,14 +58,14 @@ export default async function DashboardPage() {
     },
     {
       label: "Customers",
-      value: "—",
+      value: totalCustomers.toLocaleString(),
       icon: Users,
       href: "/admin/dashboard/customers",
     },
   ];
 
   return (
-    <div className="space-y-6">
+    <AdminPage className="space-y-4 sm:space-y-6">
       {/* Welcome banner */}
       <div
         className="flex flex-col gap-4 rounded-2xl p-6 text-white sm:flex-row sm:items-center sm:justify-between"
@@ -127,6 +130,6 @@ export default async function DashboardPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </AdminPage>
   );
 }

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import Sidebar from "@/components/admin/Sidebar";
 import Topbar from "@/components/admin/Topbar";
+import { AdminLayoutProvider } from "@/components/admin/AdminLayoutProvider";
+import { isPlatformAdminProfile } from "@/lib/auth/platform-admin";
 import { createAdminClient } from "@/utils/supabase/admin-server";
 
 export default async function DashboardLayout({
@@ -20,25 +22,27 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, email")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profile?.role !== "admin") {
+  if (!isPlatformAdminProfile(profile)) {
     await supabase.auth.signOut();
     redirect("/admin/login?error=Access denied. Admin accounts only.");
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar />
+    <AdminLayoutProvider>
+      <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+        <Sidebar />
 
-      {/* Main area */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <Topbar title="Dashboard" />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <Topbar />
+          <main className="flex-1 overflow-y-auto">
+            <div className="w-full p-3 sm:p-5 lg:p-6">{children}</div>
+          </main>
+        </div>
       </div>
-    </div>
+    </AdminLayoutProvider>
   );
 }

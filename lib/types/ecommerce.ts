@@ -24,6 +24,8 @@ export interface Category {
   parent_category_id?: string | null;
   sort_order?: number;
   is_active?: boolean;
+  icon_name?: string | null;
+  product_count_text?: string | null;
 }
 
 export interface Collection {

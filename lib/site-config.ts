@@ -15,6 +15,7 @@ export interface SiteSettings {
   home_hero_eyebrow: string
   home_hero_title: string
   home_hero_description: string
+  marketplace_tenant_slug: string
 }
 
 // ─── Defaults (used as fallback if DB is unavailable) ────────────────────────
@@ -34,6 +35,7 @@ export const defaultSettings: SiteSettings = {
   home_hero_eyebrow: 'New Collection',
   home_hero_title: 'Elevate Your Everyday',
   home_hero_description: 'Discover premium products that combine style, quality and value.',
+  marketplace_tenant_slug: 'fellowmart',
 }
 
 

@@ -1,76 +1,119 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/utils/supabase/admin-server";
-import { normalizeTenantSlug } from "@/lib/utils/tenant";
+import {
+  AdminFormActions,
+  AdminFormCard,
+  AdminFormField,
+  AdminFormGrid,
+  AdminPage,
+  AdminPageHeader,
+  adminInputClass,
+  adminSelectClass,
+  adminTextareaClass,
+} from "@/components/admin/admin-ui";
+import { BUSINESS_TYPES } from "@/lib/types/business";
 
-export default async function NewStorePage() {
+type NewStorePageProps = {
+  searchParams: Promise<{ error?: string }>;
+};
+
+export default async function NewStorePage({ searchParams }: NewStorePageProps) {
+  const { error } = await searchParams;
   const supabase = await createAdminClient();
   const {
     data: { user },
-    error,
+    error: authError,
   } = await supabase.auth.getUser();
 
-  if (error || !user) {
+  if (authError || !user) {
     redirect("/admin/login");
   }
 
-  // Use API route for tenant creation to avoid server-action serialization issues
-
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-3xl font-semibold text-slate-900">
-              Create a new store
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-              Start onboarding a new tenant and set up the storefront entry
-              details.
-            </p>
-          </div>
+    <AdminPage>
+      <AdminPageHeader
+        title="Create Business"
+        description="Provision a new tenant manually with owner access and subscription state."
+      />
+
+      {error ? (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
         </div>
+      ) : null}
 
-        <form
-          action="/api/admin/tenants/create"
-          method="post"
-          className="mt-8 grid gap-6"
-        >
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-slate-700">
-                Store name
-              </label>
-              <input
-                name="name"
-                required
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-slate-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                placeholder="Your store name"
-              />
-            </div>
+      <AdminFormCard>
+        <form action="/api/admin/tenants/create" method="post" className="space-y-6">
+          <AdminFormGrid>
+            <AdminFormField label="Business name" required>
+              <input name="name" required className={adminInputClass} placeholder="City Mart" />
+            </AdminFormField>
 
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-slate-700">
-                Store slug
-              </label>
+            <AdminFormField label="Store slug" required>
               <input
                 name="slug"
                 required
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm text-slate-900 outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                placeholder="test-store"
+                className={adminInputClass}
+                placeholder="city-mart"
               />
-            </div>
-          </div>
+            </AdminFormField>
 
-          <div className="flex justify-end">
+            <AdminFormField label="Business type" required>
+              <select name="business_type" className={adminSelectClass} defaultValue="general">
+                {BUSINESS_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </AdminFormField>
+
+            <AdminFormField label="Onboarding status">
+              <select name="onboarding_status" className={adminSelectClass} defaultValue="active">
+                <option value="pending">Pending</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+              </select>
+            </AdminFormField>
+
+            <AdminFormField label="Owner name">
+              <input name="owner_name" className={adminInputClass} placeholder="Business owner" />
+            </AdminFormField>
+
+            <AdminFormField label="Owner email" required>
+              <input
+                name="owner_email"
+                type="email"
+                required
+                className={adminInputClass}
+                placeholder="owner@business.com"
+              />
+            </AdminFormField>
+
+            <AdminFormField label="Owner phone">
+              <input name="owner_phone" type="tel" className={adminInputClass} />
+            </AdminFormField>
+
+            <AdminFormField label="Business description" span={2}>
+              <textarea
+                name="business_description"
+                rows={3}
+                className={adminTextareaClass}
+                placeholder="What does this business sell?"
+              />
+            </AdminFormField>
+          </AdminFormGrid>
+
+          <AdminFormActions>
             <button
               type="submit"
-              className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+              className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90"
             >
-              Create store
+              Create business & assign owner
             </button>
-          </div>
+          </AdminFormActions>
         </form>
-      </div>
-    </div>
+      </AdminFormCard>
+    </AdminPage>
   );
 }

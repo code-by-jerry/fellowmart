@@ -606,16 +606,16 @@ export default async function TenantSettingsPage({
   const isOwner = currentUserRole === "owner";
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="w-full space-y-8">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-primary/80">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">
             Store management
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900">
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
             {tenant.name} settings
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
             Update tenant branding, onboarding progress, subscription, and team
             access in one clean admin view.
           </p>
@@ -710,11 +710,11 @@ export default async function TenantSettingsPage({
       <form
         action="/api/admin/tenants/settings/update"
         method="post"
-        className="space-y-6 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm"
+        className="space-y-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm"
       >
         <input type="hidden" name="tenant_slug" value={tenant.slug} />
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div>
             <Label htmlFor="logo_url">Logo URL</Label>
             <Input
@@ -748,7 +748,7 @@ export default async function TenantSettingsPage({
             />
           </div>
 
-          <div>
+          <div className="lg:col-span-2">
             <Label htmlFor="hero_subtitle">Hero subtitle</Label>
             <textarea
               id="hero_subtitle"
@@ -852,7 +852,7 @@ export default async function TenantSettingsPage({
               Store is active
             </Label>
           </div>
-          <div className="space-y-2 rounded-xl border border-dashed border-gray-200 bg-slate-50 p-4 text-sm text-gray-600">
+          <div className="lg:col-span-2 space-y-2 rounded-xl border border-dashed border-gray-200 bg-slate-50 p-4 text-sm text-gray-600">
             <p className="font-medium text-gray-900">Subscription state</p>
             <p>
               Current plan:{" "}
@@ -963,13 +963,13 @@ export default async function TenantSettingsPage({
             )}
           </div>
 
-          <form
+      <form
             action="/api/admin/tenants/members/add"
             method="post"
-            className="grid gap-4 sm:grid-cols-4"
+            className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4"
           >
             <input type="hidden" name="tenant_slug" value={tenant.slug} />
-            <div className="sm:col-span-1">
+            <div>
               <Label htmlFor="member_email">User email</Label>
               <Input
                 id="member_email"
@@ -980,7 +980,7 @@ export default async function TenantSettingsPage({
                 placeholder="user@example.com"
               />
             </div>
-            <div className="sm:col-span-1">
+            <div>
               <Label htmlFor="member_role">Role</Label>
               <select
                 id="member_role"
@@ -998,7 +998,7 @@ export default async function TenantSettingsPage({
                 </p>
               )}
             </div>
-            <div className="sm:col-span-1">
+            <div>
               <Label htmlFor="member_password">Password</Label>
               <Input
                 id="member_password"
@@ -1011,7 +1011,7 @@ export default async function TenantSettingsPage({
                 Provide a password only if creating a new user.
               </p>
             </div>
-            <div className="sm:col-span-1 flex items-end">
+            <div className="flex items-end">
               <Button type="submit" className="w-full">
                 Add member
               </Button>

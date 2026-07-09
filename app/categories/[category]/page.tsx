@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ChevronDown, ChevronRight, Heart, House, ListFilter, ShoppingCart } from "lucide-react";
 import { CustomerStoreLayout } from "@/components/storefront/CustomerStoreLayout";
 import { createClient } from "@/utils/supabase/server";
+import { getMarketplaceCategories, getMarketplaceCategoryBySlug } from "@/lib/catalog/marketplace-catalog";
 import styles from "./products.module.css";
 
 const products: [string, string, string, string, string, number][] = [
@@ -20,10 +22,6 @@ const filterGroups = [
   { title: "Storage Capacity", values: [["64 GB", "18"], ["128 GB", "32"], ["256 GB", "40"], ["512 GB", "22"], ["1 TB", "6"]] },
 ];
 
-function titleFromSlug(slug: string) {
-  return slug.split("-").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
-}
-
 function Filters() {
   return <div className={styles.filters}>
     <div className={styles.filterTitle}><strong>Filter By</strong><button>Clear All</button></div>
@@ -34,18 +32,25 @@ function Filters() {
 }
 
 export default async function ProductListPage({ params }: { params: Promise<{ category: string }> }) {
-  const { category } = await params;
-  const title = titleFromSlug(category);
+  const { category: categorySlug } = await params;
+  const categoryRecord = await getMarketplaceCategoryBySlug(categorySlug);
+
+  if (!categoryRecord) {
+    notFound();
+  }
+
+  const title = categoryRecord.name;
+  const allCategories = await getMarketplaceCategories();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const userName = user?.email?.split("@")[0] ?? null;
 
   return <CustomerStoreLayout userName={userName} showCategoryNav={false}>
     <div className={styles.page}>
-      <nav className={styles.breadcrumbs} aria-label="Breadcrumb"><Link href="/"><House /> Home</Link><ChevronRight /><Link href="/categories">Electronics</Link><ChevronRight /><span>{title}</span></nav>
+      <nav className={styles.breadcrumbs} aria-label="Breadcrumb"><Link href="/"><House /> Home</Link><ChevronRight /><Link href="/categories">Categories</Link><ChevronRight /><span>{title}</span></nav>
       <div className={styles.layout}>
         <aside className={styles.sidebar}>
-          <div className={styles.categoryMenu}><h2>Categories</h2><strong>Electronics <ChevronDown /></strong>{["Mobile Phones", "Laptops", "Headphones", "Smart Watches", "Cameras", "Accessories"].map((item, index) => <Link className={index === 0 ? styles.selected : ""} href="#" key={item}>{item}</Link>)}<button>+ &nbsp; View More</button></div>
+          <div className={styles.categoryMenu}><h2>Categories</h2><strong>{title} <ChevronDown /></strong>{allCategories.map((item) => <Link className={item.slug === categorySlug ? styles.selected : ""} href={`/categories/${item.slug}`} key={item.id}>{item.name}</Link>)}</div>
           <Filters />
         </aside>
 
@@ -56,7 +61,7 @@ export default async function ProductListPage({ params }: { params: Promise<{ ca
           <section className={styles.productGrid} aria-label={`${title} products`}>
             {products.map(([name, price, oldPrice, rating, reviews, item], index) => <article className={styles.productCard} key={`${name}-${index}`}>
               <div className={styles.productImage}><span style={{ "--item": item } as React.CSSProperties} /><button aria-label={`Save ${name}`}><Heart /></button></div>
-              <div className={styles.productBody}><h2><Link href={`/categories/${category}/${name.toLowerCase().replaceAll(" ", "-").replaceAll("(", "").replaceAll(")", "")}`}>{name}</Link></h2><p className={styles.rating}><strong>{rating}</strong> <span>★★★★★</span> <small>({reviews})</small></p><p className={styles.price}><strong>{price}</strong><del>{oldPrice}</del><em>{11 + index}% OFF</em></p><button className={styles.addButton}><ShoppingCart /> Add to Cart</button></div>
+              <div className={styles.productBody}><h2><Link href={`/categories/${categorySlug}/${name.toLowerCase().replaceAll(" ", "-").replaceAll("(", "").replaceAll(")", "")}`}>{name}</Link></h2><p className={styles.rating}><strong>{rating}</strong> <span>★★★★★</span> <small>({reviews})</small></p><p className={styles.price}><strong>{price}</strong><del>{oldPrice}</del><em>{11 + index}% OFF</em></p><button className={styles.addButton}><ShoppingCart /> Add to Cart</button></div>
             </article>)}
           </section>
           <nav className={styles.pagination} aria-label="Pagination">{["1", "2", "3", "4", "…", "14"].map((page, index) => <Link className={index === 0 ? styles.currentPage : ""} href="#" key={page}>{page}</Link>)}<Link href="#" aria-label="Next page"><ChevronRight /></Link></nav>

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { isPlatformAdminProfile } from "@/lib/auth/platform-admin";
 import { createAdminClient } from "@/utils/supabase/admin-server";
 
 export default async function AdminPage() {
@@ -14,11 +15,11 @@ export default async function AdminPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, email")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profile?.role === "admin") {
+  if (isPlatformAdminProfile(profile)) {
     redirect("/admin/dashboard");
   }
 

@@ -4,10 +4,14 @@ import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Mail, ArrowRight } from 'lucide-react'
+import { SiteBrand } from '@/components/SiteBrand'
 import { useSiteSettings } from '@/components/SiteSettingsProvider'
 
 const supabase = createClient()
 const OTP_LENGTH = 8
+
+/** Set to true once Resend SMTP + domain are configured in Supabase. */
+const ENABLE_EMAIL_LOGIN = false
 
 function getAuthErrorMessage(error: { message?: string; status?: number }): string {
   const message = error.message?.trim()
@@ -112,66 +116,10 @@ export default function UserLoginPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-8 py-10 space-y-6">
-          <div className="text-center mb-4">
-            <h1 className="text-3xl font-bold text-primary tracking-tight">{settings.app_name}</h1>
+          <div className="mb-4">
+            <SiteBrand variant="login" />
           </div>
-          {step === 'entry' ? (
-            <>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Sign In</h2>
-                <p className="text-sm text-gray-500 mt-1">Sign in to browse stores and place orders</p>
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-                  {error}
-                </div>
-              )}
-
-              {/* Google */}
-              <button
-                onClick={handleGoogle}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-60"
-              >
-                <GoogleIcon />
-                Continue with Google
-              </button>
-
-              {/* Divider */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-gray-200" />
-                <span className="text-xs text-gray-400 uppercase tracking-wider">or</span>
-                <div className="flex-1 h-px bg-gray-200" />
-              </div>
-
-              {/* Email */}
-              <form onSubmit={handleSendOtp} className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-gray-400"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading || !email}
-                  className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Sending OTP...' : 'Send Verification Code'}
-                  {!loading && <ArrowRight size={16} />}
-                </button>
-              </form>
-            </>
-          ) : (
+          {step === 'otp' && ENABLE_EMAIL_LOGIN ? (
             <>
               <div>
                 <button
@@ -223,6 +171,63 @@ export default function UserLoginPage() {
                   Resend OTP
                 </button>
               </form>
+            </>
+          ) : (
+            <>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Sign In</h2>
+                <p className="text-sm text-gray-500 mt-1">Sign in to browse stores and place orders</p>
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
+                  {error}
+                </div>
+              )}
+
+              <button
+                onClick={handleGoogle}
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-60"
+              >
+                <GoogleIcon />
+                Continue with Google
+              </button>
+
+              {ENABLE_EMAIL_LOGIN && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-gray-200" />
+                    <span className="text-xs text-gray-400 uppercase tracking-wider">or</span>
+                    <div className="flex-1 h-px bg-gray-200" />
+                  </div>
+
+                  <form onSubmit={handleSendOtp} className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-gray-400"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={loading || !email}
+                      className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-medium hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Sending OTP...' : 'Send Verification Code'}
+                      {!loading && <ArrowRight size={16} />}
+                    </button>
+                  </form>
+                </>
+              )}
             </>
           )}
         </div>

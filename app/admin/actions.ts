@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { isPlatformAdminProfile } from '@/lib/auth/platform-admin'
 import { createAdminClient } from '@/utils/supabase/admin-server'
 
 export async function login(formData: FormData) {
@@ -22,13 +23,13 @@ export async function login(formData: FormData) {
   // Fetch role
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role')
+    .select('role, email')
     .eq('id', data.user.id)
     .single()
 
   revalidatePath('/admin', 'layout')
 
-  if (profile?.role === 'admin') {
+  if (profile && isPlatformAdminProfile(profile)) {
     redirect('/admin/dashboard')
   } else {
     // Note: Since we are using an admin specific client, if they are not admin
@@ -38,26 +39,6 @@ export async function login(formData: FormData) {
   }
 }
 
-export async function signup(formData: FormData) {
-  const supabase = await createAdminClient()
-
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        role: 'admin', // for now we assign admin role on this specific signup page
-      },
-    },
-  })
-
-  if (error) {
-    return redirect('/admin/register?error=Could not create user')
-  }
-
-  revalidatePath('/admin', 'layout')
-  redirect('/admin/dashboard')
+export async function signup() {
+  redirect('/admin/login?error=Admin registration is disabled.')
 }

@@ -1,18 +1,10 @@
 import Link from "next/link";
 import {
-  Armchair,
-  Baby,
-  Car,
   ChevronDown,
-  CookingPot,
   Download,
-  Dumbbell,
   Ellipsis,
   LayoutGrid,
   Search,
-  Shirt,
-  Smartphone,
-  SprayCan,
   Truck,
   UserRound,
 } from "lucide-react";
@@ -21,21 +13,8 @@ import { CartDrawer } from "./CartDrawer";
 import { WishlistDrawer } from "./WishlistDrawer";
 import { getSiteSettings } from "@/lib/site-config-server";
 import type { SiteSettings } from "@/lib/site-config";
-
-/* eslint-disable @next/next/no-img-element -- Site settings logo_url can point to admin-managed external assets. */
-
-const categoryLinks = [
-  { label: "All Categories", icon: LayoutGrid, active: true },
-  { label: "Electronics", icon: Smartphone },
-  { label: "Fashion", icon: Shirt },
-  { label: "Home & Living", icon: Armchair },
-  { label: "Beauty", icon: SprayCan },
-  { label: "Kitchen", icon: CookingPot },
-  { label: "Sports", icon: Dumbbell },
-  { label: "Toys & Baby", icon: Baby },
-  { label: "Automotive", icon: Car },
-  { label: "More", icon: Ellipsis },
-];
+import { getCategoryIcon } from "@/lib/catalog/category-display";
+import { getMarketplaceCategories } from "@/lib/catalog/marketplace-catalog";
 
 export type CustomerStoreLayoutProps = {
   children: React.ReactNode;
@@ -65,8 +44,48 @@ export function StoreHeader({ userName, settings }: { userName?: string | null; 
   </header>;
 }
 
-export function StoreCategoryNavigation() {
-  return <section className={styles.categoryStrip} aria-label="Product categories"><div className={styles.categories}>{categoryLinks.map(({ label, icon: Icon, active }) => <Link href={active ? "/categories" : `/categories/${label.toLowerCase().replaceAll(" & ", "-").replaceAll(" ", "-")}`} key={label} className={styles.category}><span className={active ? styles.activeCategory : undefined}><Icon aria-hidden="true" /></span><strong>{label}</strong></Link>)}</div></section>;
+export function StoreCategoryNavigation({
+  categories,
+}: {
+  categories: Awaited<ReturnType<typeof getMarketplaceCategories>>;
+}) {
+  const navCategories = categories.slice(0, 8);
+
+  return (
+    <section className={styles.categoryStrip} aria-label="Product categories">
+      <div className={styles.categories}>
+        <Link href="/categories" className={styles.category}>
+          <span className={styles.activeCategory}>
+            <LayoutGrid aria-hidden="true" />
+          </span>
+          <strong>All Categories</strong>
+        </Link>
+        {navCategories.map((category) => {
+          const Icon = getCategoryIcon(category.icon_name);
+          return (
+            <Link
+              href={`/categories/${category.slug}`}
+              key={category.id}
+              className={styles.category}
+            >
+              <span>
+                <Icon aria-hidden="true" />
+              </span>
+              <strong>{category.name}</strong>
+            </Link>
+          );
+        })}
+        {categories.length > 8 && (
+          <Link href="/categories" className={styles.category}>
+            <span>
+              <Ellipsis aria-hidden="true" />
+            </span>
+            <strong>More</strong>
+          </Link>
+        )}
+      </div>
+    </section>
+  );
 }
 
 export function StoreFooter({ settings }: { settings: SiteSettings }) {
@@ -76,5 +95,6 @@ export function StoreFooter({ settings }: { settings: SiteSettings }) {
 
 export async function CustomerStoreLayout({ children, userName, showPrimaryNav = true, showCategoryNav = false, showFooter = true }: CustomerStoreLayoutProps) {
   const settings = await getSiteSettings();
-  return <div className={styles.page}><AnnouncementBar settings={settings} /><StoreHeader userName={userName} settings={settings} />{showCategoryNav && <StoreCategoryNavigation />}<main>{children}</main>{showFooter && <StoreFooter settings={settings} />}</div>;
+  const categories = showCategoryNav ? await getMarketplaceCategories() : [];
+  return <div className={styles.page}><AnnouncementBar settings={settings} /><StoreHeader userName={userName} settings={settings} />{showCategoryNav && <StoreCategoryNavigation categories={categories} />}<main>{children}</main>{showFooter && <StoreFooter settings={settings} />}</div>;
 }

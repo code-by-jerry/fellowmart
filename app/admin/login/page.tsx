@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createAdminClient } from '@/utils/supabase/admin-client'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
+import { isPlatformAdminEmail, isPlatformAdminProfile } from '@/lib/auth/platform-admin'
+import { SiteBrand } from '@/components/SiteBrand'
 import { useSiteSettings } from '@/components/SiteSettingsProvider'
 
 const supabase = createAdminClient()
@@ -31,11 +33,11 @@ export default function AdminLoginPage() {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('role')
+      .select('role, email')
       .eq('id', data.user.id)
       .single()
 
-    if (profile?.role !== 'admin') {
+    if (!isPlatformAdminProfile(profile) || !isPlatformAdminEmail(email)) {
       setError('Access denied. Admin accounts only.')
       await supabase.auth.signOut()
       setLoading(false)
@@ -51,9 +53,8 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Form */}
         <div className="px-8 py-10 space-y-6">
-          <div className="text-center mb-4">
-            <h1 className="text-3xl font-bold text-primary tracking-tight">{settings.app_name}</h1>
-            <p className="text-sm font-medium text-primary mt-1 uppercase tracking-widest">Admin Portal</p>
+          <div className="mb-4">
+            <SiteBrand variant="login" subtitle="Admin Portal" />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Sign In</h2>
