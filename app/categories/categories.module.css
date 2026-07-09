@@ -1,0 +1,65 @@
+.page { max-width: 1378px; margin: auto; padding: 20px 45px 34px; }
+.breadcrumbs { display: flex; align-items: center; gap: 12px; color: #666; font-size: 12px; }
+.breadcrumbs a { display: flex; align-items: center; gap: 8px; }
+.breadcrumbs svg { width: 14px; height: 14px; }
+.headingRow { margin-top: 23px; display: flex; align-items: flex-start; justify-content: space-between; gap: 30px; }
+.headingRow h1 { font-size: 27px; letter-spacing: -.7px; }
+.headingRow > div:first-child p { margin-top: 9px; color: #555; font-size: 13px; }
+.topBenefits { display: grid; grid-template-columns: repeat(3, 1fr); min-width: 570px; }
+.topBenefits > div { min-height: 54px; padding: 0 28px; display: flex; align-items: center; gap: 15px; border-right: 1px solid #ddd; }
+.topBenefits > div:last-child { border: 0; }
+.topBenefits svg { width: 29px; height: 29px; stroke-width: 1.5; flex: 0 0 auto; }
+.topBenefits p, .bottomBenefits p { display: grid; gap: 6px; font-size: 11px; }
+.topBenefits strong, .bottomBenefits strong { font-size: 12px; }
+.topBenefits span, .bottomBenefits span { color: #555; }
+.grid { margin-top: 22px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 19px 18px; }
+.card { position: relative; overflow: hidden; border: 1px solid #e2e2e2; border-radius: 11px; background: #fff; transition: transform .2s ease, box-shadow .2s ease; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,.08); }
+.image { position: relative; height: 158px; overflow: hidden; background: #f1efeb; }
+.image span { position: absolute; inset: 0; display: block; background: url('/images/collection-sprite.png') no-repeat; background-size: 600% 100%; background-position: calc(var(--item) * -100%) center; transition: transform .35s ease; }
+.card:hover .image span { transform: scale(1.04); }
+.alternateImage span { background-image: url('/images/featured-sprite.png'); }
+.icon { position: absolute; left: 19px; top: 133px; width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid #e4e4e4; border-radius: 50%; background: #fff; }
+.icon svg { width: 23px; height: 23px; stroke-width: 1.6; }
+.cardBody { padding: 27px 20px 18px; }
+.cardBody h2 { font-size: 17px; }
+.cardBody p { margin-top: 6px; color: #555; font-size: 12px; }
+.cardBody a { width: fit-content; margin-top: 16px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
+.cardBody a svg { width: 15px; transition: transform .2s ease; }
+.cardBody a:hover svg { transform: translateX(3px); }
+.bottomBenefits { border-block: 1px solid #e8e8e8; background: #fafafa; }
+.bottomBenefits > div { max-width: 1378px; min-height: 92px; margin: auto; padding: 0 70px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; }
+.bottomBenefits > div > div { min-height: 54px; padding: 0 45px; display: flex; align-items: center; gap: 18px; border-right: 1px solid #ddd; }
+.bottomBenefits > div > div:last-child { border: 0; }
+.bottomBenefits svg { width: 31px; height: 31px; stroke-width: 1.5; flex: 0 0 auto; }
+
+@media (max-width: 1100px) {
+  .page { padding-inline: 28px; }
+  .headingRow { display: block; }
+  .topBenefits { min-width: 0; margin-top: 24px; }
+  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .bottomBenefits > div { padding: 0 25px; }
+  .bottomBenefits > div > div { padding: 0 20px; }
+}
+
+@media (max-width: 700px) {
+  .page { padding: 18px 14px 28px; }
+  .headingRow h1 { font-size: 24px; }
+  .topBenefits { display: flex; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+  .topBenefits > div { min-width: 210px; padding: 0 18px; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .image { height: 125px; }
+  .icon { left: 13px; top: 102px; width: 43px; height: 43px; }
+  .cardBody { padding: 26px 14px 15px; }
+  .cardBody h2 { font-size: 15px; }
+  .bottomBenefits > div { grid-template-columns: repeat(2, 1fr); padding: 10px; }
+  .bottomBenefits > div > div { min-height: 70px; padding: 0 13px; border-bottom: 1px solid #ddd; }
+  .bottomBenefits > div > div:nth-child(even) { border-right: 0; }
+  .bottomBenefits > div > div:nth-last-child(-n+2) { border-bottom: 0; }
+}
+
+@media (max-width: 430px) {
+  .grid { grid-template-columns: 1fr; }
+  .image { height: 180px; }
+  .icon { top: 157px; }
+}
