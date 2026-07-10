@@ -6,8 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "preview:cf": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy:cf": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "upload:cf": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "deploy:cf": "npm run deploy",
+    "upload:cf": "npm run upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "start": "next start",
     "lint": "eslint",
@@ -17,7 +19,9 @@
     "db:push": "supabase db push",
     "db:status": "supabase status",
     "seed:admin": "node scripts/seed-platform-admin.mjs",
-    "seed:fellowmart": "node scripts/seed-fellowmart-catalog.mjs"
+    "seed:fellowmart": "node scripts/seed-fellowmart-catalog.mjs",
+    "cf:push-secrets": "node scripts/push-cloudflare-secrets.mjs",
+    "cf:check-env": "node scripts/check-cloudflare-env.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

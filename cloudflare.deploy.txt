@@ -1,0 +1,36 @@
+# Cloudflare Workers — Git connect build settings
+# Use these when importing code-by-jerry/fellowmart in the dashboard.
+
+# Repository: code-by-jerry/fellowmart
+# Production branch: master
+
+# Build settings (Workers & Pages → Create → Import Git):
+#   Build command:              npm run build
+#   Deploy command:             npm run deploy
+#   Non-production deploy cmd:  npm run upload
+
+# Environment variables — add ALL of these in Cloudflare Build settings:
+#   NEXT_PUBLIC_SUPABASE_URL
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY
+#   NEXT_PUBLIC_APP_URL          (production URL, not localhost)
+#   NEXT_PUBLIC_SITE_URL         (same as APP_URL)
+#   SUPABASE_SERVICE_ROLE_KEY
+#   IMAGEKIT_PUBLIC_KEY
+#   IMAGEKIT_PRIVATE_KEY
+#   IMAGEKIT_URL_ENDPOINT
+#   RAZORPAY_KEY_ID
+#   RAZORPAY_KEY_SECRET
+#   RAZORPAY_WEBHOOK_SECRET
+#   PLATFORM_ADMIN_EMAIL
+
+# GitHub Actions alternative (already configured):
+#   Repo → Settings → Secrets and variables → Actions
+#   Add the same keys plus:
+#     CLOUDFLARE_API_TOKEN
+#     CLOUDFLARE_ACCOUNT_ID
+#   Push to master triggers .github/workflows/deploy-cloudflare.yml
+
+# After first deploy:
+#   1. Supabase → Auth → Site URL + Redirect: https://YOUR-DOMAIN/auth/callback
+#   2. Razorpay → Webhook: https://YOUR-DOMAIN/api/webhooks/razorpay
+#   3. npm run cf:push-secrets  (sync .env.local secrets to Worker locally)
