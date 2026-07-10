@@ -14,6 +14,7 @@
 
 # ── Next.js build output ────────────────────────────────────
 /.next/
+/.open-next/
 /out/
 /build
 
@@ -21,6 +22,7 @@
 .env
 .env.*
 !.env.local.example      # safe — template only, no real values
+.dev.vars
 
 # ── Supabase CLI temp files ──────────────────────────────────
 supabase/.temp/

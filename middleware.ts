@@ -7,6 +7,8 @@ import {
   storeSlugFromPathname,
 } from "@/lib/tenant/active-store";
 
+export const runtime = "experimental-edge";
+
 function createCustomerClient(
   request: NextRequest,
   onCookies: (cookies: { name: string; value: string; options?: object }[]) => void,
@@ -50,7 +52,7 @@ function createAdminSessionClient(
   );
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   const legacyStorePath = getLegacyStoreRedirect(path);

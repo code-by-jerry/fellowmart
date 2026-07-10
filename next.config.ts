@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 const nextConfig: NextConfig = {
   // Allow next/image to load images from ImageKit's CDN
@@ -21,3 +22,5 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+initOpenNextCloudflareForDev();
