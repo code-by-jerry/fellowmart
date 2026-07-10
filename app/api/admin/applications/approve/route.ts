@@ -1,14 +1,13 @@
-import { NextResponse } from "next/server";
 import { provisionTenant } from "@/lib/business/provision-tenant";
 import { requirePlatformAdminApi } from "@/lib/admin/auth";
 import { redirectTo } from "@/lib/route-utils";
 
 export async function POST(request: Request) {
-  try {
-    const form = await request.formData();
-    const applicationId = String(form.get("application_id") ?? "").trim();
-    const reviewNotes = String(form.get("review_notes") ?? "").trim();
+  const form = await request.formData();
+  const applicationId = String(form.get("application_id") ?? "").trim();
+  const reviewNotes = String(form.get("review_notes") ?? "").trim();
 
+  try {
     const { userId, db } = await requirePlatformAdminApi();
 
     const { data: application, error } = await db
@@ -19,7 +18,10 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (error || !application) {
-      return redirectTo(request, "/admin/dashboard/applications?error=Application not found");
+      return redirectTo(
+        request,
+        `/admin/dashboard/applications/${applicationId}?error=Application not found or already reviewed`,
+      );
     }
 
     const result = await provisionTenant(db, {
@@ -55,9 +57,28 @@ export async function POST(request: Request) {
     if (updateError) {
       return redirectTo(
         request,
-        "/admin/dashboard/applications?error=Tenant created but application update failed",
+        `/admin/dashboard/applications/${application.id}?error=Tenant created but application update failed`,
       );
     }
+
+    const { emitEvent } = await import("@/lib/activity/emit");
+    await emitEvent({
+      type: "application.approved",
+      title: "Application approved",
+      body: `${application.business_name} is now live as ${result.tenantSlug}`,
+      href: `/admin/dashboard/stores/${result.tenantSlug}/settings`,
+      actorId: userId,
+      notifyPlatform: true,
+      logPlatform: true,
+      tenantId: result.tenantId,
+      notifyTenant: true,
+      logTenant: true,
+      action: "application.approved",
+      entityType: "business_application",
+      entityId: application.id,
+      summary: `Approved application: ${application.business_name}`,
+      meta: { tenant_slug: result.tenantSlug },
+    });
 
     return redirectTo(
       request,
@@ -65,9 +86,10 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal Server Error";
-    return redirectTo(
-      request,
-      `/admin/dashboard/applications?error=${encodeURIComponent(message)}`,
-    );
+    const fallback = applicationId
+      ? `/admin/dashboard/applications/${applicationId}?error=${encodeURIComponent(message)}`
+      : `/admin/dashboard/applications?error=${encodeURIComponent(message)}`;
+
+    return redirectTo(request, fallback);
   }
 }

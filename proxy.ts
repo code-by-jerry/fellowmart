@@ -1,6 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isPlatformAdminEmail } from "@/lib/auth/platform-admin";
+import { getLegacyStoreRedirect } from "@/lib/routes/store-routes";
+import {
+  storeSlugCookieOptions,
+  storeSlugFromPathname,
+} from "@/lib/tenant/active-store";
 
 function createCustomerClient(
   request: NextRequest,
@@ -46,8 +51,14 @@ function createAdminSessionClient(
 }
 
 export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
   const path = request.nextUrl.pathname;
+
+  const legacyStorePath = getLegacyStoreRedirect(path);
+  if (legacyStorePath) {
+    return NextResponse.redirect(new URL(legacyStorePath, request.url));
+  }
+
+  let supabaseResponse = NextResponse.next({ request });
 
   const applyCookies = (
     cookiesToSet: { name: string; value: string; options?: object }[],
@@ -62,11 +73,6 @@ export async function proxy(request: NextRequest) {
   // Refresh customer session on all routes
   const customerClient = createCustomerClient(request, applyCookies);
   await customerClient.auth.getUser();
-
-  // Protect /business routes (login handled on page; refresh session here)
-  if (path.startsWith("/business")) {
-    await customerClient.auth.getUser();
-  }
 
   // Protect /admin routes (login only is public)
   if (path.startsWith("/admin") && !path.startsWith("/admin/login")) {
@@ -96,6 +102,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(
       new URL(path.replace("/dashboard", "/admin/dashboard"), request.url),
     );
+  }
+
+  // Remember last visited store so /profile and other customer pages keep tenant theme
+  const visitedStore = storeSlugFromPathname(path);
+  if (visitedStore) {
+    const cookie = storeSlugCookieOptions(visitedStore);
+    supabaseResponse.cookies.set(cookie.name, cookie.value, cookie.options);
   }
 
   return supabaseResponse;

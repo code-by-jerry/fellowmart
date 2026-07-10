@@ -1,16 +1,11 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/utils/supabase/admin-server";
-import { normalizeTenantSlug } from "@/lib/utils/tenant";
+import { requirePlatformAdminTenant } from "@/lib/admin/auth";
 import { redirectTo } from "@/lib/route-utils";
 
 export async function POST(request: Request) {
   try {
     const form = await request.formData();
     const tenantSlug = String(form.get("tenant_slug") ?? "").trim();
-    const logo_url = String(form.get("logo_url") ?? "").trim();
-    const primary_color = String(form.get("primary_color") ?? "#000000").trim();
-    const hero_title = String(form.get("hero_title") ?? "").trim();
-    const hero_subtitle = String(form.get("hero_subtitle") ?? "").trim();
     const onboarding_status = String(
       form.get("onboarding_status") ?? "pending",
     );
@@ -20,46 +15,28 @@ export async function POST(request: Request) {
     );
     const is_active = form.get("is_active") === "on";
 
-    const supabase = await createAdminClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) return redirectTo(request, "/admin/login");
-
-    const { data: tenant, error: tenantError } = await supabase
-      .from("tenants")
-      .select("id")
-      .eq("slug", normalizeTenantSlug(tenantSlug))
-      .maybeSingle();
-
-    if (tenantError || !tenant)
-      return redirectTo(
-        request,
-        "/admin/dashboard/stores?error=Tenant not found",
-      );
-
-    const { data: membership, error: membershipError } = await supabase
-      .from("tenant_memberships")
-      .select("role")
-      .eq("tenant_id", tenant.id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (
-      membershipError ||
-      !membership ||
-      !["owner", "admin"].includes(membership.role)
-    ) {
+    let ctx;
+    try {
+      ctx = await requirePlatformAdminTenant(tenantSlug);
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : "FORBIDDEN";
+      if (code === "UNAUTHORIZED") {
+        return redirectTo(request, "/admin/login");
+      }
+      if (code === "TENANT_NOT_FOUND") {
+        return redirectTo(
+          request,
+          "/admin/dashboard/stores?error=Tenant not found",
+        );
+      }
       return redirectTo(request, "/admin/dashboard/stores?error=Access denied");
     }
 
-    const { error: tenantUpdateError } = await supabase
+    const { db, tenant, tenantSlug: normalizedSlug } = ctx;
+
+    const { error: tenantUpdateError } = await db
       .from("tenants")
       .update({
-        logo_url: logo_url || null,
-        primary_color: primary_color || "#000000",
         onboarding_status,
         is_active,
         updated_at: new Date().toISOString(),
@@ -69,39 +46,18 @@ export async function POST(request: Request) {
     if (tenantUpdateError) {
       return redirectTo(
         request,
-        "/admin/dashboard/stores?error=Could not update tenant settings",
+        `/admin/dashboard/stores/${normalizedSlug}/settings?error=Could not update tenant`,
       );
     }
 
-    const { data: catalogSettings } = await supabase
-      .from("tenant_catalog_settings")
-      .select("id")
-      .eq("tenant_id", tenant.id)
-      .maybeSingle();
-
-    if (catalogSettings) {
-      await supabase
-        .from("tenant_catalog_settings")
-        .update({
-          hero_title,
-          hero_subtitle,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", catalogSettings.id);
-    } else {
-      await supabase
-        .from("tenant_catalog_settings")
-        .insert({ tenant_id: tenant.id, hero_title, hero_subtitle });
-    }
-
-    const { data: existingSubscription } = await supabase
+    const { data: existingSubscription } = await db
       .from("subscriptions")
       .select("id")
       .eq("tenant_id", tenant.id)
       .maybeSingle();
 
     if (existingSubscription) {
-      await supabase
+      await db
         .from("subscriptions")
         .update({
           plan_name,
@@ -110,7 +66,7 @@ export async function POST(request: Request) {
         })
         .eq("tenant_id", tenant.id);
     } else {
-      await supabase.from("subscriptions").insert({
+      await db.from("subscriptions").insert({
         tenant_id: tenant.id,
         plan_name,
         status: subscription_status,
@@ -120,15 +76,17 @@ export async function POST(request: Request) {
 
     return redirectTo(
       request,
-      `/admin/dashboard/stores/${tenantSlug}/settings?success=Settings updated`,
+      `/admin/dashboard/stores/${normalizedSlug}/settings?success=Tenant updated`,
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(
       "Error in /api/admin/tenants/settings/update:",
-      err?.message ?? err,
+      err instanceof Error ? err.message : err,
     );
     return new NextResponse(
-      JSON.stringify({ error: err?.message ?? "Internal Server Error" }),
+      JSON.stringify({
+        error: err instanceof Error ? err.message : "Internal Server Error",
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },

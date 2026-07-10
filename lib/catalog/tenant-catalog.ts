@@ -1,13 +1,32 @@
+import { cache } from "react";
 import { createClient } from "@/utils/supabase/server";
 
-export async function getTenantCatalog(tenantSlug: string) {
+const TENANT_BRANDING_SELECT =
+  "id, name, slug, settings, onboarding_status, is_active, business_type, logo_url, favicon_url, primary_color, currency, meta_title, meta_description, meta_keywords, announcement_text, announcement_promo, footer_description, home_hero_eyebrow, home_hero_title, home_hero_description";
+
+async function fetchTenantBySlug(tenantSlug: string) {
   const supabase = await createClient();
 
   const { data: tenant } = await supabase
     .from("tenants")
-    .select("id, name, slug, settings, onboarding_status")
+    .select(TENANT_BRANDING_SELECT)
     .eq("slug", tenantSlug)
     .maybeSingle();
+
+  if (!tenant || !tenant.is_active) {
+    return null;
+  }
+
+  return tenant;
+}
+
+/** Lightweight tenant row for branding/context — avoids loading the full catalog. */
+export const getTenantBySlug = cache(fetchTenantBySlug);
+
+async function fetchTenantCatalog(tenantSlug: string) {
+  const supabase = await createClient();
+
+  const tenant = await getTenantBySlug(tenantSlug);
 
   if (!tenant) {
     return null;
@@ -42,3 +61,5 @@ export async function getTenantCatalog(tenantSlug: string) {
     products: products ?? [],
   };
 }
+
+export const getTenantCatalog = cache(fetchTenantCatalog);

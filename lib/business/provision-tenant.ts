@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { validateTenantSlug } from "@/lib/routes/store-routes";
 import { normalizeTenantSlug } from "@/lib/utils/tenant";
 import type {
   BusinessType,
@@ -39,8 +40,9 @@ export async function provisionTenant(
   const slug = normalizeTenantSlug(input.businessSlug || input.businessName);
   const ownerEmail = input.ownerEmail.trim().toLowerCase();
 
-  if (!slug) {
-    throw new Error("A valid store URL slug is required.");
+  const slugError = validateTenantSlug(slug);
+  if (slugError) {
+    throw new Error(slugError);
   }
 
   const { data: existingTenant } = await db

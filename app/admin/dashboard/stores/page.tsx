@@ -1,26 +1,25 @@
 import Link from "next/link";
 import { PlusCircle, Store } from "lucide-react";
-import { redirect } from "next/navigation";
 import {
   AdminEmptyState,
   AdminListHeader,
   AdminPage,
   AdminPanel,
 } from "@/components/admin/admin-ui";
-import { createAdminClient } from "@/utils/supabase/admin-server";
+import { getAdminDataClient } from "@/lib/admin/auth";
+import { getPlanLabel, getStorePlanOptions } from "@/lib/admin/store-plans";
+import { storePath } from "@/lib/routes/store-routes";
 
-export default async function StoresPage() {
-  const supabase = await createAdminClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+type StoresPageProps = {
+  searchParams: Promise<{ success?: string; error?: string }>;
+};
 
-  if (error || !user) {
-    redirect("/admin/login");
-  }
+export default async function StoresPage({ searchParams }: StoresPageProps) {
+  const { success, error } = await searchParams;
+  const db = await getAdminDataClient();
+  const planOptions = await getStorePlanOptions(db);
 
-  const { data: tenants } = await supabase
+  const { data: tenants } = await db
     .from("tenants")
     .select(
       "id, name, slug, is_active, onboarding_status, subscriptions(status, plan_name)",
@@ -45,6 +44,18 @@ export default async function StoresPage() {
         }
       />
 
+      {success ? (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {success}
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      ) : null}
+
       <AdminPanel>
         {tenantList.length === 0 ? (
           <AdminEmptyState
@@ -65,7 +76,7 @@ export default async function StoresPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900">{tenant.name}</p>
-                        <p className="text-xs text-gray-500">/{tenant.slug}</p>
+                        <p className="text-xs text-gray-500">{storePath(tenant.slug)}</p>
                       </div>
                       <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                         {tenant.onboarding_status ?? "pending"}
@@ -83,8 +94,8 @@ export default async function StoresPage() {
                         <span className="block text-gray-400">Subscription</span>
                         <span className="font-medium text-gray-700">
                           {plan
-                            ? `${plan.plan_name} / ${plan.status}`
-                            : "starter / trial"}
+                            ? `${getPlanLabel(plan.plan_name, planOptions)} · ${plan.status}`
+                            : "Starter · Free · trial"}
                         </span>
                       </div>
                     </div>
@@ -167,7 +178,7 @@ export default async function StoresPage() {
                     return (
                       <tr key={tenant.id} className="border-t last:border-b">
                         <td className="px-4 py-3 text-gray-900">{tenant.name}</td>
-                        <td className="px-4 py-3 text-gray-500">/{tenant.slug}</td>
+                        <td className="px-4 py-3 text-gray-500">{storePath(tenant.slug)}</td>
                         <td className="px-4 py-3">
                           <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
                             {tenant.onboarding_status ?? "pending"}
@@ -178,8 +189,8 @@ export default async function StoresPage() {
                         </td>
                         <td className="px-4 py-3 text-gray-500">
                           {plan
-                            ? `${plan.plan_name} / ${plan.status}`
-                            : "starter / trial"}
+                            ? `${getPlanLabel(plan.plan_name, planOptions)} · ${plan.status}`
+                            : "Starter · Free · trial"}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-2">

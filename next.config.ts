@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         hostname: 'ik.imagekit.io',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
     ],
   },
   // Keep @imagekit/nodejs server-side only — never bundle it for the browser

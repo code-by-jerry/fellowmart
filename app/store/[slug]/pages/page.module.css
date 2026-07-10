@@ -1,0 +1,83 @@
+.pageShell {
+  max-width: var(--store-shell-max, 1378px);
+  margin: 0 auto;
+  padding: 28px var(--store-shell-gutter, 32px) 72px;
+}
+
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 28px;
+  font-size: 13px;
+  color: #777;
+}
+
+.breadcrumb a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #555;
+}
+
+.breadcrumb a:hover {
+  color: #111;
+}
+
+.breadcrumb span:last-child {
+  color: #111;
+}
+
+.pageHeader {
+  margin-bottom: 28px;
+}
+
+.pageHeader h1 {
+  font: 500 clamp(32px, 4vw, 44px) / 1.12 Georgia, "Times New Roman", serif;
+  letter-spacing: -1px;
+  color: #111;
+}
+
+.pageBody {
+  font-size: 17px;
+  line-height: 1.75;
+  color: #222;
+}
+
+.pageBody :global(p) {
+  margin: 0 0 1.15em;
+}
+
+.pageBody :global(h2),
+.pageBody :global(h3) {
+  margin: 1.6em 0 0.55em;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  letter-spacing: -0.4px;
+  color: #111;
+}
+
+.pageBody :global(h2) {
+  font-size: 1.4em;
+}
+
+.pageBody :global(h3) {
+  font-size: 1.15em;
+}
+
+.pageBody :global(a) {
+  color: var(--primary, #111);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .pageShell {
+    padding: 20px 16px 56px;
+  }
+
+  .pageBody {
+    font-size: 16px;
+  }
+}

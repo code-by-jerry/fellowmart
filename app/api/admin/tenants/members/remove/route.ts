@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/utils/supabase/admin-server";
-import { normalizeTenantSlug } from "@/lib/utils/tenant";
+import { requirePlatformAdminTenant } from "@/lib/admin/auth";
 import { redirectTo } from "@/lib/route-utils";
 
 export async function POST(request: Request) {
@@ -9,41 +8,41 @@ export async function POST(request: Request) {
     const tenantSlug = String(form.get("tenant_slug") ?? "").trim();
     const membershipId = String(form.get("membership_id") ?? "").trim();
 
-    const supabase = await createAdminClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    let ctx;
+    try {
+      ctx = await requirePlatformAdminTenant(tenantSlug);
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : "FORBIDDEN";
+      if (code === "UNAUTHORIZED") {
+        return redirectTo(request, "/admin/login");
+      }
+      if (code === "TENANT_NOT_FOUND") {
+        return redirectTo(
+          request,
+          "/admin/dashboard/stores?error=Tenant not found",
+        );
+      }
+      return redirectTo(request, "/admin/dashboard/stores?error=Access denied");
+    }
 
-    if (userError || !user) return redirectTo(request, "/admin/login");
+    const { db, tenant, tenantSlug: normalizedSlug } = ctx;
 
-    const { data: tenant, error: tenantError } = await supabase
-      .from("tenants")
-      .select("id")
-      .eq("slug", normalizeTenantSlug(tenantSlug))
-      .maybeSingle();
-
-    if (tenantError || !tenant)
-      return redirectTo(
-        request,
-        "/admin/dashboard/stores?error=Tenant not found",
-      );
-
-    const { data: membership, error: membershipError } = await supabase
+    const { data: membership, error: membershipError } = await db
       .from("tenant_memberships")
       .select("id, role")
       .eq("id", membershipId)
       .eq("tenant_id", tenant.id)
       .maybeSingle();
 
-    if (membershipError || !membership)
+    if (membershipError || !membership) {
       return redirectTo(
         request,
         "/admin/dashboard/stores?error=Membership not found",
       );
+    }
 
     if (membership.role === "owner") {
-      const { data: owners } = await supabase
+      const { data: owners } = await db
         .from("tenant_memberships")
         .select("id")
         .eq("tenant_id", tenant.id)
@@ -57,29 +56,32 @@ export async function POST(request: Request) {
       }
     }
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await db
       .from("tenant_memberships")
       .delete()
       .eq("id", membershipId)
       .eq("tenant_id", tenant.id);
 
-    if (deleteError)
+    if (deleteError) {
       return redirectTo(
         request,
-        `/admin/dashboard/stores/${tenantSlug}/settings?error=Could not remove member`,
+        `/admin/dashboard/stores/${normalizedSlug}/settings?error=Could not remove member`,
       );
+    }
 
     return redirectTo(
       request,
-      `/admin/dashboard/stores/${tenantSlug}/settings?success=Member removed`,
+      `/admin/dashboard/stores/${normalizedSlug}/settings?success=Member removed`,
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(
       "Error in /api/admin/tenants/members/remove:",
-      err?.message ?? err,
+      err instanceof Error ? err.message : err,
     );
     return new NextResponse(
-      JSON.stringify({ error: err?.message ?? "Internal Server Error" }),
+      JSON.stringify({
+        error: err instanceof Error ? err.message : "Internal Server Error",
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },

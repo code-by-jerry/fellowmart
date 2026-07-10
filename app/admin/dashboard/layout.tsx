@@ -33,13 +33,13 @@ export default async function DashboardLayout({
 
   return (
     <AdminLayoutProvider>
-      <div className="flex h-screen w-full overflow-hidden bg-slate-50">
+      <div className="flex h-screen w-full overflow-hidden bg-[#f1f1f1]">
         <Sidebar />
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <Topbar />
           <main className="flex-1 overflow-y-auto">
-            <div className="w-full p-3 sm:p-5 lg:p-6">{children}</div>
+            <div className="mx-auto w-full max-w-[1200px] p-3 sm:p-4">{children}</div>
           </main>
         </div>
       </div>

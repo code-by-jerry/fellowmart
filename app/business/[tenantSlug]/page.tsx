@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { requireTenantManager } from "@/lib/auth/business-access";
-import { BUSINESS_TYPES } from "@/lib/types/business";
 import {
-  BusinessShell,
   BusinessStatCard,
 } from "@/components/business/BusinessShell";
+import { StorefrontPreviewLink } from "@/components/business/StorefrontPreviewLink";
+import { BUSINESS_TYPES } from "@/lib/types/business";
+import Link from "next/link";
 
 const TYPE_LABELS = Object.fromEntries(
   BUSINESS_TYPES.map((type) => [type.value, type.label]),
@@ -35,7 +35,7 @@ export default async function TenantDashboardPage({
   ]);
 
   return (
-    <BusinessShell tenantSlug={tenant.slug} tenantName={tenant.name}>
+    <>
       {error ? (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
@@ -56,13 +56,7 @@ export default async function TenantDashboardPage({
             {TYPE_LABELS[tenant.business_type] ?? tenant.business_type} · Role: {role}
           </p>
           <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            <Link
-              href={`/${tenant.slug}`}
-              target="_blank"
-              className="inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              View public store
-            </Link>
+            <StorefrontPreviewLink tenantSlug={tenant.slug} label="View public store" />
             <Link
               href={`/business/${tenant.slug}/products`}
               className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
@@ -82,6 +76,6 @@ export default async function TenantDashboardPage({
           />
         </div>
       </div>
-    </BusinessShell>
+    </>
   );
 }

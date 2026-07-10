@@ -49,6 +49,9 @@ export function buildMetadata(
     title: string
     description: string
     path: string
+    image: string | null
+    keywords: string | null
+    type: 'website' | 'article'
   }>
 ): Metadata {
   const title = override?.title
@@ -56,21 +59,26 @@ export function buildMetadata(
     : settings.meta_title
 
   const description = override?.description ?? settings.meta_description
+  const keywords = override?.keywords ?? settings.meta_keywords
+  const image = override?.image ?? settings.logo_url
 
   return {
     title,
     description,
-    keywords: settings.meta_keywords,
+    keywords,
     icons: settings.favicon_url ? { icon: settings.favicon_url } : undefined,
     openGraph: {
       title,
       description,
       siteName: settings.app_name,
+      type: override?.type ?? 'website',
+      ...(image ? { images: [{ url: image }] } : {}),
     },
     twitter: {
-      card: 'summary',
+      card: image ? 'summary_large_image' : 'summary',
       title,
       description,
+      ...(image ? { images: [image] } : {}),
     },
   }
 }

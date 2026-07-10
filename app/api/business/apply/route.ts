@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { validateTenantSlug } from "@/lib/routes/store-routes";
 import { BUSINESS_TYPES } from "@/lib/types/business";
 import { normalizeTenantSlug } from "@/lib/utils/tenant";
 import { createClient } from "@/utils/supabase/server";
@@ -36,6 +37,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Please fill all required fields." }, { status: 400 });
     }
 
+    const slugError = validateTenantSlug(business_slug);
+    if (slugError) {
+      return NextResponse.json({ error: slugError }, { status: 400 });
+    }
+
     if (!BUSINESS_TYPE_SET.has(business_type as (typeof BUSINESS_TYPES)[number]["value"])) {
       return NextResponse.json({ error: "Invalid business type." }, { status: 400 });
     }
@@ -67,26 +73,47 @@ export async function POST(request: Request) {
       );
     }
 
-    const { error } = await supabase.from("business_applications").insert({
-      user_id: user.id,
-      applicant_name,
-      applicant_email,
-      applicant_phone,
-      business_name,
-      business_slug,
-      business_type,
-      business_description: business_description || null,
-      address_line1: address_line1 || null,
-      city: city || null,
-      state: state || null,
-      postal_code: postal_code || null,
-      country: "IN",
-      status: "pending",
-    });
+    const { data: created, error } = await supabase
+      .from("business_applications")
+      .insert({
+        user_id: user.id,
+        applicant_name,
+        applicant_email,
+        applicant_phone,
+        business_name,
+        business_slug,
+        business_type,
+        business_description: business_description || null,
+        address_line1: address_line1 || null,
+        city: city || null,
+        state: state || null,
+        postal_code: postal_code || null,
+        country: "IN",
+        status: "pending",
+      })
+      .select("id")
+      .single();
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    const { emitEvent } = await import("@/lib/activity/emit");
+    await emitEvent({
+      type: "application.submitted",
+      title: "New business application",
+      body: `${business_name} (${business_slug}) from ${applicant_name}`,
+      href: `/admin/dashboard/applications/${created.id}`,
+      actorId: user.id,
+      actorEmail: applicant_email,
+      notifyPlatform: true,
+      logPlatform: true,
+      action: "application.submitted",
+      entityType: "business_application",
+      entityId: created.id,
+      summary: `Application submitted: ${business_name}`,
+      meta: { business_slug, business_type },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

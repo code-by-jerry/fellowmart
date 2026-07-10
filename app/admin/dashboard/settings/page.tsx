@@ -89,8 +89,8 @@ export default function SettingsPage() {
   return (
     <AdminPage>
       <AdminPageHeader
-        title="Site Settings"
-        description="Configure your app identity, branding, storefront content, and SEO."
+        title="Platform settings"
+        description="Fellowmate landing page branding, theme, and SEO — not individual storefronts. Each store owns its own settings in the business portal."
       />
 
       {message && (

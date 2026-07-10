@@ -33,7 +33,7 @@ export default async function CustomersPage() {
     <AdminPage className="space-y-4 sm:space-y-6">
       <AdminListHeader
         title="Customers"
-        description="View and manage customer profiles, contact details, and delivery addresses."
+        description="Platform-wide shopper accounts. Each store manages its own customers under Business → Customers."
       />
 
       <AdminPanel>

@@ -1,4 +1,8 @@
-.page { max-width: 1378px; margin: auto; padding: 20px 45px 34px; }
+.page {
+  max-width: var(--store-shell-max, 1378px);
+  margin: auto;
+  padding: 20px var(--store-shell-gutter, 32px) 34px;
+}
 .breadcrumbs { display: flex; align-items: center; gap: 12px; color: #666; font-size: 12px; }
 .breadcrumbs a { display: flex; align-items: center; gap: 8px; }
 .breadcrumbs svg { width: 14px; height: 14px; }
@@ -15,7 +19,7 @@
 .grid { margin-top: 22px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 19px 18px; }
 .card { position: relative; overflow: hidden; border: 1px solid #e2e2e2; border-radius: 11px; background: #fff; transition: transform .2s ease, box-shadow .2s ease; }
 .card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,.08); }
-.image { position: relative; height: 158px; overflow: hidden; background: #f1efeb; }
+.image { position: relative; height: 158px; overflow: hidden; background: #f4f4f4; }
 .image span { position: absolute; inset: 0; display: block; background: url('/images/collection-sprite.png') no-repeat; background-size: 600% 100%; background-position: calc(var(--item) * -100%) center; transition: transform .35s ease; }
 .card:hover .image span { transform: scale(1.04); }
 .alternateImage span { background-image: url('/images/featured-sprite.png'); }
@@ -28,7 +32,7 @@
 .cardBody a svg { width: 15px; transition: transform .2s ease; }
 .cardBody a:hover svg { transform: translateX(3px); }
 .bottomBenefits { border-block: 1px solid #e8e8e8; background: #fafafa; }
-.bottomBenefits > div { max-width: 1378px; min-height: 92px; margin: auto; padding: 0 70px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; }
+.bottomBenefits > div { max-width: var(--store-shell-max, 1378px); min-height: 92px; margin: auto; padding: 0 var(--store-shell-gutter, 32px); display: grid; grid-template-columns: repeat(4, 1fr); align-items: center; }
 .bottomBenefits > div > div { min-height: 54px; padding: 0 45px; display: flex; align-items: center; gap: 18px; border-right: 1px solid #ddd; }
 .bottomBenefits > div > div:last-child { border: 0; }
 .bottomBenefits svg { width: 31px; height: 31px; stroke-width: 1.5; flex: 0 0 auto; }

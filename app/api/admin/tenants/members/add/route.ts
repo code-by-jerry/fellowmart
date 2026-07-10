@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/utils/supabase/admin-server";
-import { createServiceRoleClient } from "@/utils/supabase/service-role-client";
-import { normalizeTenantSlug } from "@/lib/utils/tenant";
+import { requirePlatformAdminTenant } from "@/lib/admin/auth";
 import { redirectTo } from "@/lib/route-utils";
 
 export async function POST(request: Request) {
@@ -14,56 +12,37 @@ export async function POST(request: Request) {
     const memberRole = String(form.get("member_role") ?? "staff").trim();
     const memberPassword = String(form.get("member_password") ?? "").trim();
 
-    const supabase = await createAdminClient();
-    const serviceRoleSupabase = createServiceRoleClient();
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) return redirectTo(request, "/admin/login");
-
-    const { data: tenant, error: tenantError } = await supabase
-      .from("tenants")
-      .select("id")
-      .eq("slug", normalizeTenantSlug(tenantSlug))
-      .maybeSingle();
-
-    if (tenantError || !tenant)
-      return redirectTo(
-        request,
-        "/admin/dashboard/stores?error=Tenant not found",
-      );
-
-    const { data: membership, error: membershipError } = await supabase
-      .from("tenant_memberships")
-      .select("role")
-      .eq("tenant_id", tenant.id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (
-      membershipError ||
-      !membership ||
-      !["owner", "admin"].includes(membership.role)
-    ) {
+    let ctx;
+    try {
+      ctx = await requirePlatformAdminTenant(tenantSlug);
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : "FORBIDDEN";
+      if (code === "UNAUTHORIZED") {
+        return redirectTo(request, "/admin/login");
+      }
+      if (code === "TENANT_NOT_FOUND") {
+        return redirectTo(
+          request,
+          "/admin/dashboard/stores?error=Tenant not found",
+        );
+      }
       return redirectTo(request, "/admin/dashboard/stores?error=Access denied");
     }
 
-    let profile = null;
-    const { data: existingProfile, error: profileError } =
-      await serviceRoleSupabase
-        .from("profiles")
-        .select("id,email")
-        .eq("email", memberEmail)
-        .maybeSingle();
+    const { db, tenant, tenantSlug: normalizedSlug } = ctx;
+
+    let profile: { id: string; email: string } | null = null;
+    const { data: existingProfile, error: profileError } = await db
+      .from("profiles")
+      .select("id,email")
+      .eq("email", memberEmail)
+      .maybeSingle();
 
     if (profileError) {
       console.error("Profile lookup failed:", profileError);
       return redirectTo(
         request,
-        `/admin/dashboard/stores/${tenantSlug}/settings?error=Could not look up user`,
+        `/admin/dashboard/stores/${normalizedSlug}/settings?error=Could not look up user`,
       );
     }
 
@@ -73,12 +52,12 @@ export async function POST(request: Request) {
       if (!memberPassword) {
         return redirectTo(
           request,
-          `/admin/dashboard/stores/${tenantSlug}/settings?error=Password required for new user`,
+          `/admin/dashboard/stores/${normalizedSlug}/settings?error=Password required for new user`,
         );
       }
 
       const { data: createData, error: createError } =
-        await serviceRoleSupabase.auth.admin.createUser({
+        await db.auth.admin.createUser({
           email: memberEmail,
           password: memberPassword,
           email_confirm: true,
@@ -88,7 +67,7 @@ export async function POST(request: Request) {
         console.error("Invite user creation failed:", createError);
         return redirectTo(
           request,
-          `/admin/dashboard/stores/${tenantSlug}/settings?error=Could not create user`,
+          `/admin/dashboard/stores/${normalizedSlug}/settings?error=Could not create user`,
         );
       }
 
@@ -98,40 +77,46 @@ export async function POST(request: Request) {
       };
     }
 
-    const { data: existingMembership } = await serviceRoleSupabase
+    const { data: existingMembership } = await db
       .from("tenant_memberships")
       .select("id")
       .eq("tenant_id", tenant.id)
       .eq("user_id", profile.id)
       .maybeSingle();
 
-    if (existingMembership)
+    if (existingMembership) {
       return redirectTo(
         request,
-        `/admin/dashboard/stores/${tenantSlug}/settings?error=User already a member`,
+        `/admin/dashboard/stores/${normalizedSlug}/settings?error=User already a member`,
       );
+    }
 
-    const { error: insertError } = await serviceRoleSupabase
-      .from("tenant_memberships")
-      .insert({ tenant_id: tenant.id, user_id: profile.id, role: memberRole });
+    const { error: insertError } = await db.from("tenant_memberships").insert({
+      tenant_id: tenant.id,
+      user_id: profile.id,
+      role: memberRole,
+    });
 
-    if (insertError)
+    if (insertError) {
       return redirectTo(
         request,
-        `/admin/dashboard/stores/${tenantSlug}/settings?error=Could not add member`,
+        `/admin/dashboard/stores/${normalizedSlug}/settings?error=Could not add member`,
       );
+    }
 
     return redirectTo(
       request,
-      `/admin/dashboard/stores/${tenantSlug}/settings?success=Member added`,
+      `/admin/dashboard/stores/${normalizedSlug}/settings?success=Member added`,
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(
       "Error in /api/admin/tenants/members/add:",
-      err?.message ?? err,
+      err instanceof Error ? err.message : err,
     );
     return new NextResponse(
-      JSON.stringify({ error: err?.message ?? "Internal Server Error" }),
+      JSON.stringify({
+        error: err instanceof Error ? err.message : "Internal Server Error",
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },

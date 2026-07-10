@@ -1,30 +1,47 @@
 import Link from "next/link";
+import { storePath } from "@/lib/routes/store-routes";
+
+type StoreTenant = {
+  name: string;
+  slug?: string;
+};
 
 export function StorefrontShell({
   tenant,
+  slug,
   children,
 }: {
-  tenant: string;
+  tenant: StoreTenant | string;
+  slug?: string;
   children: React.ReactNode;
 }) {
+  const storeSlug =
+    slug ??
+    (typeof tenant === "string" ? tenant : (tenant.slug ?? ""));
+  const storeName =
+    typeof tenant === "string" ? tenant : tenant.name;
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              FellowMart
+              FellowMart Store
             </p>
-            <h1 className="text-xl font-semibold">{tenant}</h1>
+            <h1 className="text-xl font-semibold">{storeName}</h1>
           </div>
           <nav className="flex items-center gap-4 text-sm">
-            <Link href={`/${tenant}`} className="hover:text-primary">
+            <Link href={storePath(storeSlug)} className="hover:text-primary">
               Home
             </Link>
-            <Link href={`/${tenant}/products`} className="hover:text-primary">
+            <Link
+              href={storePath(storeSlug, "products")}
+              className="hover:text-primary"
+            >
               Products
             </Link>
-            <Link href={`/${tenant}/cart`} className="hover:text-primary">
+            <Link href={storePath(storeSlug, "cart")} className="hover:text-primary">
               Cart
             </Link>
           </nav>

@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ImageUpload from '@/components/ui/ImageUpload'
+import { CategoryIconPicker } from '@/components/business/CategoryIconPicker'
 import type { Category } from '@/lib/types/ecommerce'
 import {
   AdminFormActions,
@@ -35,6 +36,7 @@ export function CategoryForm({
   const router = useRouter()
   const formRef = useRef<HTMLFormElement>(null)
   const [imageUrl, setImageUrl] = useState(initial?.image_url ?? '')
+  const [iconName, setIconName] = useState(initial?.icon_name ?? 'LayoutGrid')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -50,6 +52,7 @@ export function CategoryForm({
 
     const formData = new FormData(e.currentTarget)
     formData.set('image_url', imageUrl)
+    formData.set('icon_name', iconName)
 
     const res = await fetch(action, {
       method: 'POST',
@@ -85,6 +88,7 @@ export function CategoryForm({
       )}
 
       {defaultTenantSlug && <input type="hidden" name="tenant_slug" value={defaultTenantSlug} />}
+      <input type="hidden" name="icon_name" value={iconName} />
 
       <AdminFormGrid>
         {mode === 'create' && (
@@ -147,16 +151,12 @@ export function CategoryForm({
           />
         </AdminFormField>
 
-        <AdminFormField label="Storefront icon">
-          <select
-            name="icon_name"
-            defaultValue={initial?.icon_name ?? 'LayoutGrid'}
-            className={adminSelectClass}
-          >
-            {['Smartphone', 'Shirt', 'Armchair', 'SprayCan', 'CookingPot', 'ShoppingBasket', 'Dumbbell', 'Baby', 'BookOpen', 'Car', 'LayoutGrid'].map((icon) => (
-              <option key={icon} value={icon}>{icon}</option>
-            ))}
-          </select>
+        <AdminFormField
+          label="Storefront icon"
+          hint="Shown in the category strip on the storefront"
+          span={2}
+        >
+          <CategoryIconPicker value={iconName} onChange={setIconName} />
         </AdminFormField>
 
         <AdminFormField label="Product count label">

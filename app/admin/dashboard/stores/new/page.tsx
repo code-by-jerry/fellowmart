@@ -56,6 +56,9 @@ export default async function NewStorePage({ searchParams }: NewStorePageProps) 
                 className={adminInputClass}
                 placeholder="city-mart"
               />
+              <p className="mt-1 text-xs text-gray-400">
+                Public URL will be /store/your-slug
+              </p>
             </AdminFormField>
 
             <AdminFormField label="Business type" required>

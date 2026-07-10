@@ -2,14 +2,31 @@ import { cn } from "@/lib/utils";
 
 export const ADMIN_SHELL_HEADER_CLASS = "h-14 shrink-0";
 
+/** Compact form controls — Shopify-like density */
 export const adminInputClass =
-  "w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-primary focus:ring-1 focus:ring-primary";
+  "h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-[13px] text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-400";
 
 export const adminSelectClass =
-  "w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-primary focus:ring-1 focus:ring-primary";
+  "h-9 w-full rounded-md border border-gray-300 bg-white px-3 text-[13px] text-gray-900 outline-none transition focus:border-gray-500 focus:ring-1 focus:ring-gray-400";
 
 export const adminTextareaClass =
-  "w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-primary focus:ring-1 focus:ring-primary";
+  "w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2 text-[13px] text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-500 focus:ring-1 focus:ring-gray-400";
+
+export const adminBtnPrimaryClass =
+  "inline-flex h-8 items-center justify-center gap-1.5 rounded-md bg-gray-900 px-3 text-[13px] font-medium text-white transition hover:bg-gray-800 disabled:opacity-60";
+
+export const adminBtnSecondaryClass =
+  "inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 text-[13px] font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60";
+
+export const adminBtnDangerClass =
+  "inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 text-[13px] font-medium text-red-700 transition hover:bg-red-100 disabled:opacity-60";
+
+export const adminTableClass = "min-w-full table-auto text-[13px]";
+
+export const adminThClass =
+  "border-b border-gray-200 bg-[#f7f7f7] px-3 py-2 text-left text-[12px] font-semibold text-gray-600";
+
+export const adminTdClass = "border-b border-gray-100 px-3 py-2.5 text-gray-700";
 
 type AdminPageHeaderProps = {
   title: string;
@@ -27,21 +44,23 @@ export function AdminPageHeader({
   return (
     <div
       className={cn(
-        "mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-start sm:justify-between sm:gap-4",
+        "mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3",
         className,
       )}
     >
       <div className="min-w-0">
-        <h1 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl lg:text-3xl">
+        <h1 className="text-lg font-semibold tracking-tight text-gray-900 sm:text-xl">
           {title}
         </h1>
         {description ? (
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-gray-500">
+          <p className="mt-0.5 max-w-3xl text-[13px] leading-5 text-gray-500">
             {description}
           </p>
         ) : null}
       </div>
-      {actions ? <div className="shrink-0 [&_a]:w-full sm:[&_a]:w-auto [&_button]:w-full sm:[&_button]:w-auto">{actions}</div> : null}
+      {actions ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+      ) : null}
     </div>
   );
 }
@@ -72,7 +91,7 @@ export function AdminPanel({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-gray-200 bg-white shadow-sm",
+        "overflow-hidden rounded-md border border-gray-200 bg-white",
         className,
       )}
     >
@@ -86,23 +105,22 @@ export function AdminEmptyState({
   message,
   className,
 }: {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   message: string;
   className?: string;
 }) {
   return (
     <div
       className={cn(
-        "px-4 py-10 text-center text-sm text-gray-500 sm:px-8 sm:py-12",
+        "px-4 py-8 text-center text-[13px] text-gray-500 sm:px-6",
         className,
       )}
     >
-      <div className="mx-auto mb-3 text-gray-300">{icon}</div>
+      {icon ? <div className="mx-auto mb-2 text-gray-300">{icon}</div> : null}
       {message}
     </div>
   );
 }
-
 
 type AdminFormCardProps = {
   title?: string;
@@ -122,26 +140,26 @@ export function AdminFormCard({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm",
+        "overflow-hidden rounded-md border border-gray-200 bg-white",
         className,
       )}
     >
       {title ? (
-        <div className="border-b border-gray-100 bg-gray-50/80 px-5 py-4">
-          <div className="flex items-start gap-3">
+        <div className="border-b border-gray-200 bg-[#fafafa] px-4 py-3">
+          <div className="flex items-start gap-2.5">
             {icon ? (
               <span className="mt-0.5 text-gray-500">{icon}</span>
             ) : null}
             <div>
-              <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
+              <h2 className="text-[13px] font-semibold text-gray-900">{title}</h2>
               {description ? (
-                <p className="mt-0.5 text-xs text-gray-500">{description}</p>
+                <p className="mt-0.5 text-[12px] text-gray-500">{description}</p>
               ) : null}
             </div>
           </div>
         </div>
       ) : null}
-      <div className="p-5 sm:p-6">{children}</div>
+      <div className="p-4">{children}</div>
     </section>
   );
 }
@@ -154,12 +172,7 @@ export function AdminFormGrid({
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "grid grid-cols-1 gap-5 lg:grid-cols-2",
-        className,
-      )}
-    >
+    <div className={cn("grid grid-cols-1 gap-3.5 lg:grid-cols-2", className)}>
       {children}
     </div>
   );
@@ -179,12 +192,12 @@ export function AdminFormField({
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn("space-y-1.5", span === 2 && "lg:col-span-2")}>
-      <label className="block text-sm font-medium text-gray-700">
+    <div className={cn("space-y-1", span === 2 && "lg:col-span-2")}>
+      <label className="block text-[12px] font-semibold text-gray-700">
         {label}
         {required ? <span className="text-red-500"> *</span> : null}
       </label>
-      {hint ? <p className="text-xs text-gray-400">{hint}</p> : null}
+      {hint ? <p className="text-[11px] text-gray-400">{hint}</p> : null}
       {children}
     </div>
   );
@@ -200,7 +213,7 @@ export function AdminFormActions({
   return (
     <div
       className={cn(
-        "flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-end",
+        "flex flex-col-reverse gap-2 border-t border-gray-200 pt-3.5 sm:flex-row sm:items-center sm:justify-end",
         className,
       )}
     >
@@ -216,7 +229,5 @@ export function AdminPage({
   children: React.ReactNode;
   className?: string;
 }) {
-  return (
-    <div className={cn("w-full", className)}>{children}</div>
-  );
+  return <div className={cn("w-full", className)}>{children}</div>;
 }

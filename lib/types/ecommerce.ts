@@ -1,4 +1,4 @@
-export type CurrencyCode = "INR";
+export type CurrencyCode = "INR" | "USD" | "EUR" | "AED";
 
 export interface Tenant {
   id: string;
@@ -9,7 +9,17 @@ export interface Tenant {
   is_active?: boolean;
   settings?: Record<string, unknown>;
   logo_url?: string | null;
+  favicon_url?: string | null;
   primary_color?: string;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  meta_keywords?: string | null;
+  announcement_text?: string | null;
+  announcement_promo?: string | null;
+  footer_description?: string | null;
+  home_hero_eyebrow?: string | null;
+  home_hero_title?: string | null;
+  home_hero_description?: string | null;
   created_at?: string;
   updated_at?: string;
 }

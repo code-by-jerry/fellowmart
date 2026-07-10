@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/utils/supabase/admin-server";
-import { isPlatformAdminProfile } from "@/lib/auth/platform-admin";
-import { normalizeTenantSlug } from "@/lib/utils/tenant";
+import { requirePlatformAdminTenant } from "@/lib/admin/auth";
 import { redirectTo } from "@/lib/route-utils";
 
 export async function POST(request: Request) {
@@ -10,53 +8,26 @@ export async function POST(request: Request) {
     const tenantSlug = String(form.get("tenant_slug") ?? "").trim();
     const onboardingStatus = String(form.get("onboarding_status") ?? "").trim();
 
-    const supabase = await createAdminClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      return redirectTo(request, "/admin/login");
-    }
-
-    const { data: tenant, error: tenantError } = await supabase
-      .from("tenants")
-      .select("id")
-      .eq("slug", normalizeTenantSlug(tenantSlug))
-      .maybeSingle();
-
-    if (tenantError || !tenant) {
-      return redirectTo(
-        request,
-        "/admin/dashboard/stores?error=Tenant not found",
-      );
-    }
-
-    const { data: membership, error: membershipError } = await supabase
-      .from("tenant_memberships")
-      .select("id, role")
-      .eq("tenant_id", tenant.id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, email")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    const isGlobalAdmin = isPlatformAdminProfile(profile);
-
-    if (membershipError || (!membership && !isGlobalAdmin)) {
+    let ctx;
+    try {
+      ctx = await requirePlatformAdminTenant(tenantSlug);
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : "FORBIDDEN";
+      if (code === "UNAUTHORIZED") {
+        return redirectTo(request, "/admin/login");
+      }
+      if (code === "TENANT_NOT_FOUND") {
+        return redirectTo(
+          request,
+          "/admin/dashboard/stores?error=Tenant not found",
+        );
+      }
       return redirectTo(request, "/admin/dashboard/stores?error=Access denied");
     }
 
-    if (!isGlobalAdmin && !["owner", "admin"].includes(membership?.role)) {
-      return redirectTo(request, "/admin/dashboard/stores?error=Access denied");
-    }
+    const { db, tenant } = ctx;
 
-    const tenantUpdatePayload: any = {
+    const tenantUpdatePayload: Record<string, unknown> = {
       onboarding_status: onboardingStatus,
       updated_at: new Date().toISOString(),
     };
@@ -69,7 +40,7 @@ export async function POST(request: Request) {
       tenantUpdatePayload.is_active = false;
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await db
       .from("tenants")
       .update(tenantUpdatePayload)
       .eq("id", tenant.id);
@@ -82,14 +53,14 @@ export async function POST(request: Request) {
     }
 
     if (onboardingStatus === "active" || onboardingStatus === "completed") {
-      const { data: existingSubscription } = await supabase
+      const { data: existingSubscription } = await db
         .from("subscriptions")
         .select("id, status")
         .eq("tenant_id", tenant.id)
         .maybeSingle();
 
       if (existingSubscription) {
-        await supabase
+        await db
           .from("subscriptions")
           .update({
             status:
@@ -103,7 +74,7 @@ export async function POST(request: Request) {
           })
           .eq("tenant_id", tenant.id);
       } else {
-        await supabase.from("subscriptions").insert({
+        await db.from("subscriptions").insert({
           tenant_id: tenant.id,
           plan_name: "starter",
           status: onboardingStatus === "completed" ? "active" : "trial",
@@ -116,14 +87,15 @@ export async function POST(request: Request) {
       request,
       "/admin/dashboard/stores?success=Onboarding status updated",
     );
-  } catch (err: any) {
-    // Log the error for debugging and return a JSON error response
+  } catch (err: unknown) {
     console.error(
       "Error in /api/admin/tenants/onboarding:",
-      err?.message ?? err,
+      err instanceof Error ? err.message : err,
     );
     return new NextResponse(
-      JSON.stringify({ error: err?.message ?? "Internal Server Error" }),
+      JSON.stringify({
+        error: err instanceof Error ? err.message : "Internal Server Error",
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },

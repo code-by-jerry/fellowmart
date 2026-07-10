@@ -15,7 +15,7 @@ export async function requireBusinessUser() {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    redirect("/login?next=/business");
+    redirect("/business/login");
   }
 
   return { supabase, user };

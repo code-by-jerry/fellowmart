@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { storePath } from "@/lib/routes/store-routes";
 import { BUSINESS_TYPES } from "@/lib/types/business";
 import { normalizeTenantSlug } from "@/lib/utils/tenant";
 import {
@@ -141,7 +142,7 @@ export function BusinessApplicationForm({
             placeholder="city-mart-grocers"
           />
           <p className="text-xs text-gray-400">
-            Public store: /{businessSlug || suggestedSlug || "your-store"}
+            Public store: {storePath(businessSlug || suggestedSlug || "your-store")}
           </p>
         </div>
 

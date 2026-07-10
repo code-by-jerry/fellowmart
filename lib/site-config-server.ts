@@ -1,7 +1,8 @@
+import { cache } from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { defaultSettings, type SiteSettings } from './site-config'
 
-export async function getSiteSettings(): Promise<SiteSettings> {
+async function fetchSiteSettings(): Promise<SiteSettings> {
   try {
     const supabase = await createClient()
     const { data, error } = await supabase
@@ -16,3 +17,5 @@ export async function getSiteSettings(): Promise<SiteSettings> {
     return defaultSettings
   }
 }
+
+export const getSiteSettings = cache(fetchSiteSettings)

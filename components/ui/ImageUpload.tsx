@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useCallback, DragEvent, ChangeEvent } from 'react'
+import { useRef, useState, useCallback, useEffect, DragEvent, ChangeEvent } from 'react'
 import { UploadCloud, X, ImageIcon, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 
@@ -15,6 +15,8 @@ interface ImageUploadProps {
   label?: string
   /** Whether upload is disabled */
   disabled?: boolean
+  /** Compact thumbnail uploader for dense layouts (e.g. variant tables) */
+  compact?: boolean
 }
 
 type UploadState = 'idle' | 'uploading' | 'done' | 'error'
@@ -25,12 +27,20 @@ export default function ImageUpload({
   folder = 'uploads',
   label,
   disabled = false,
+  compact = false,
 }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl ?? null)
   const [uploadState, setUploadState] = useState<UploadState>('idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+
+  useEffect(() => {
+    setPreviewUrl(currentUrl ?? null)
+    if (!currentUrl) {
+      setUploadState('idle')
+    }
+  }, [currentUrl])
 
   const handleFile = useCallback(
     async (file: File) => {
@@ -97,6 +107,72 @@ export default function ImageUpload({
   }
 
   const isUploading = uploadState === 'uploading'
+
+  if (compact) {
+    return (
+      <div className="space-y-1.5">
+        <div
+          onClick={() => !disabled && !isUploading && inputRef.current?.click()}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          role="button"
+          tabIndex={disabled ? -1 : 0}
+          onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
+          aria-label="Upload variant image"
+          className={[
+            'relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed transition-colors',
+            isDragging
+              ? 'border-primary bg-primary/5'
+              : 'border-gray-300 bg-gray-50 hover:border-primary hover:bg-primary/5',
+            disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
+          ].join(' ')}
+        >
+          {previewUrl ? (
+            <Image
+              src={previewUrl}
+              alt="Variant"
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          ) : (
+            <ImageIcon className="h-5 w-5 text-gray-400" />
+          )}
+          {isUploading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            </div>
+          )}
+          {previewUrl && !isUploading && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                clearImage()
+              }}
+              aria-label="Remove image"
+              className="absolute right-0.5 top-0.5 rounded-full bg-white/90 p-0.5 shadow-sm border border-gray-200 hover:bg-red-50"
+            >
+              <X className="h-3 w-3 text-gray-600" />
+            </button>
+          )}
+        </div>
+        {errorMsg ? (
+          <p className="max-w-[72px] text-[10px] leading-tight text-red-500">{errorMsg}</p>
+        ) : null}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+          onChange={onInputChange}
+          className="hidden"
+          disabled={disabled}
+          aria-hidden
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-2">

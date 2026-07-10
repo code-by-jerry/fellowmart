@@ -14,7 +14,7 @@ Fellowmate is a **multi-tenant commerce platform**:
 
 Each approved business becomes a **tenant** with:
 
-- Public storefront: `/{tenant-slug}`
+- Public storefront: `/store/{tenant-slug}`
 - Business admin: `/business/{tenant-slug}`
 - Platform oversight: `/admin/dashboard/stores/{tenant-slug}/settings`
 
@@ -31,7 +31,7 @@ Each approved business becomes a **tenant** with:
    - `tenant_memberships` owner record
    - `subscriptions` trial row
    - Owner auth user (if new email)
-6. Owner signs in and opens `/business`
+6. Owner signs in at `/business/login` and opens `/business`
 
 ### 2. Manual provisioning (superadmin)
 
@@ -79,6 +79,7 @@ Templates and default categories per type are a **next phase**.
 
 ```
 /apply                          → Business application form
+/business/login                 → Business owner sign in
 /business                       → Owner's business list
 /business/[slug]                → Tenant dashboard
 /business/[slug]/products       → Tenant products
@@ -87,5 +88,6 @@ Templates and default categories per type are a **next phase**.
 /admin/dashboard/applications   → Superadmin approval queue
 /admin/dashboard/stores/new     → Manual business creation
 /admin/dashboard/stores         → All tenants
-/[tenant-slug]                  → Public storefront
+/store/[slug]                   → Public storefront
+/store/[slug]/products            → Public product listing
 ```

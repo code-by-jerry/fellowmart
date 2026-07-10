@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { createAdminClient } from "@/utils/supabase/admin-server";
-import { normalizeTenantSlug } from "@/lib/utils/tenant";
+import { requirePlatformAdminTenant } from "@/lib/admin/auth";
 import { redirectTo } from "@/lib/route-utils";
 
 export async function POST(request: Request) {
@@ -10,57 +9,41 @@ export async function POST(request: Request) {
     const membershipId = String(form.get("membership_id") ?? "").trim();
     const memberRole = String(form.get("member_role") ?? "staff").trim();
 
-    const supabase = await createAdminClient();
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) return redirectTo(request, "/admin/login");
-
-    const { data: tenant, error: tenantError } = await supabase
-      .from("tenants")
-      .select("id")
-      .eq("slug", normalizeTenantSlug(tenantSlug))
-      .maybeSingle();
-
-    if (tenantError || !tenant)
-      return redirectTo(
-        request,
-        "/admin/dashboard/stores?error=Tenant not found",
-      );
-
-    const { data: currentUserMembership, error: currErr } = await supabase
-      .from("tenant_memberships")
-      .select("role")
-      .eq("tenant_id", tenant.id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (
-      currErr ||
-      !currentUserMembership ||
-      !["owner", "admin"].includes(currentUserMembership.role)
-    ) {
+    let ctx;
+    try {
+      ctx = await requirePlatformAdminTenant(tenantSlug);
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : "FORBIDDEN";
+      if (code === "UNAUTHORIZED") {
+        return redirectTo(request, "/admin/login");
+      }
+      if (code === "TENANT_NOT_FOUND") {
+        return redirectTo(
+          request,
+          "/admin/dashboard/stores?error=Tenant not found",
+        );
+      }
       return redirectTo(request, "/admin/dashboard/stores?error=Access denied");
     }
 
-    const { data: targetMembership, error: targetMembershipError } =
-      await supabase
-        .from("tenant_memberships")
-        .select("id, role")
-        .eq("id", membershipId)
-        .eq("tenant_id", tenant.id)
-        .maybeSingle();
+    const { db, tenant, tenantSlug: normalizedSlug } = ctx;
 
-    if (targetMembershipError || !targetMembership)
+    const { data: targetMembership, error: targetMembershipError } = await db
+      .from("tenant_memberships")
+      .select("id, role")
+      .eq("id", membershipId)
+      .eq("tenant_id", tenant.id)
+      .maybeSingle();
+
+    if (targetMembershipError || !targetMembership) {
       return redirectTo(
         request,
         "/admin/dashboard/stores?error=Membership not found",
       );
+    }
 
     if (targetMembership.role === "owner" && memberRole !== "owner") {
-      const { data: owners } = await supabase
+      const { data: owners } = await db
         .from("tenant_memberships")
         .select("id")
         .eq("tenant_id", tenant.id)
@@ -74,36 +57,32 @@ export async function POST(request: Request) {
       }
     }
 
-    if (memberRole === "owner" && currentUserMembership.role !== "owner") {
-      return redirectTo(
-        request,
-        "/admin/dashboard/stores?error=Only owners can assign owner role",
-      );
-    }
-
-    const { error: updateError } = await supabase
+    const { error: updateError } = await db
       .from("tenant_memberships")
       .update({ role: memberRole })
       .eq("id", membershipId)
       .eq("tenant_id", tenant.id);
 
-    if (updateError)
+    if (updateError) {
       return redirectTo(
         request,
-        `/admin/dashboard/stores/${tenantSlug}/settings?error=Could not update member role`,
+        `/admin/dashboard/stores/${normalizedSlug}/settings?error=Could not update member role`,
       );
+    }
 
     return redirectTo(
       request,
-      `/admin/dashboard/stores/${tenantSlug}/settings?success=Member role updated`,
+      `/admin/dashboard/stores/${normalizedSlug}/settings?success=Member role updated`,
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(
       "Error in /api/admin/tenants/members/update-role:",
-      err?.message ?? err,
+      err instanceof Error ? err.message : err,
     );
     return new NextResponse(
-      JSON.stringify({ error: err?.message ?? "Internal Server Error" }),
+      JSON.stringify({
+        error: err instanceof Error ? err.message : "Internal Server Error",
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },

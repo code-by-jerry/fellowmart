@@ -354,7 +354,7 @@ export function AddressManager({ addresses, profileDefaults }: AddressManagerPro
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-primary">
                       <Icon className="h-5 w-5" />
                     </div>
                     <div>
@@ -379,7 +379,7 @@ export function AddressManager({ addresses, profileDefaults }: AddressManagerPro
                         type="button"
                         disabled={isPending}
                         onClick={() => handleSetDefault(address.id)}
-                        className="rounded-lg px-2 py-1 text-xs font-medium text-primary hover:bg-primary/5 disabled:opacity-50"
+                        className="rounded-lg px-2 py-1 text-xs font-medium text-primary hover:bg-gray-100 disabled:opacity-50"
                       >
                         Set default
                       </button>
