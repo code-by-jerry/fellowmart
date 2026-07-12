@@ -70,6 +70,7 @@ export default function SettingsPage() {
     if (error) {
       setMessage({ type: 'error', text: error.message })
     } else {
+      await fetch('/api/admin/site-settings/revalidate', { method: 'POST' })
       setMessage({ type: 'success', text: 'Settings saved successfully.' })
       router.refresh()
     }

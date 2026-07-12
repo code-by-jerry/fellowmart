@@ -61,12 +61,21 @@ export function buildMetadata(
   const description = override?.description ?? settings.meta_description
   const keywords = override?.keywords ?? settings.meta_keywords
   const image = override?.image ?? settings.logo_url
+  const favicon = settings.favicon_url
 
   return {
     title,
     description,
     keywords,
-    icons: settings.favicon_url ? { icon: settings.favicon_url } : undefined,
+    ...(favicon
+      ? {
+          icons: {
+            icon: [{ url: favicon }],
+            shortcut: favicon,
+            apple: favicon,
+          },
+        }
+      : {}),
     openGraph: {
       title,
       description,

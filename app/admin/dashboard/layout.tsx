@@ -1,9 +1,17 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import Sidebar from "@/components/admin/Sidebar";
 import Topbar from "@/components/admin/Topbar";
 import { AdminLayoutProvider } from "@/components/admin/AdminLayoutProvider";
 import { isPlatformAdminProfile } from "@/lib/auth/platform-admin";
+import { buildMetadata } from "@/lib/site-config";
+import { getSiteSettings } from "@/lib/site-config-server";
 import { createAdminClient } from "@/utils/supabase/admin-server";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  return buildMetadata(settings, { title: "Admin dashboard" });
+}
 
 export default async function DashboardLayout({
   children,

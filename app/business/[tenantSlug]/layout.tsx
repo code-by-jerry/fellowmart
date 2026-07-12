@@ -1,7 +1,34 @@
+import type { Metadata } from "next";
 import { PortalTopbar } from "@/components/portal/PortalTopbar";
 import { BusinessPortalSidebar } from "@/components/business/BusinessPortalSidebar";
 import { AdminLayoutProvider } from "@/components/admin/AdminLayoutProvider";
 import { requireTenantManager } from "@/lib/auth/business-access";
+import { getTenantBySlug } from "@/lib/catalog/tenant-catalog";
+import { buildMetadata } from "@/lib/site-config";
+import { getSiteSettings } from "@/lib/site-config-server";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ tenantSlug: string }>;
+}): Promise<Metadata> {
+  const { tenantSlug } = await params;
+  const [platform, tenant] = await Promise.all([
+    getSiteSettings(),
+    getTenantBySlug(tenantSlug),
+  ]);
+
+  if (!tenant) return buildMetadata(platform);
+
+  return buildMetadata(
+    {
+      ...platform,
+      app_name: tenant.name || platform.app_name,
+      favicon_url: tenant.favicon_url || platform.favicon_url,
+    },
+    { title: "Business dashboard" },
+  );
+}
 
 export default async function BusinessTenantLayout({
   children,

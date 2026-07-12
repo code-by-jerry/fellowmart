@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import {
   canManageTenant,
   getTenantAccess,
@@ -130,6 +131,9 @@ export async function POST(request: Request) {
       summary: `Store settings updated: ${name}`,
       meta: { tenant_slug: tenantSlug, currency: currencyRaw },
     });
+
+    revalidatePath(`/store/${tenantSlug}`, "layout");
+    revalidatePath(`/business/${tenantSlug}`, "layout");
 
     return NextResponse.json({ success: true });
   } catch (error) {

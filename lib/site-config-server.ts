@@ -1,7 +1,12 @@
 import { cache } from "react";
-import { unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { defaultSettings, type SiteSettings } from "./site-config";
+
+export const SITE_SETTINGS_CACHE_TAG = "site-settings";
+
+const SITE_SETTINGS_SELECT =
+  "id, app_name, logo_url, logo_alt, favicon_url, theme_color, marketplace_tenant_slug, meta_title, meta_description, meta_keywords, announcement_text, announcement_promo, footer_description, home_hero_eyebrow, home_hero_title, home_hero_description";
 
 /** Stateless client — safe inside unstable_cache (no request cookies). */
 function createPublicSupabase() {
@@ -16,9 +21,7 @@ async function fetchSiteSettings(): Promise<SiteSettings> {
     const supabase = createPublicSupabase();
     const { data, error } = await supabase
       .from("site_settings")
-      .select(
-        "id, app_name, tagline, theme_color, logo_url, favicon_url, marketplace_tenant_slug, meta_title, meta_description, meta_keywords, contact_email, contact_phone, social_links",
-      )
+      .select(SITE_SETTINGS_SELECT)
       .eq("id", 1)
       .single();
 
@@ -29,11 +32,15 @@ async function fetchSiteSettings(): Promise<SiteSettings> {
   }
 }
 
-/** Cross-request cache — site settings change rarely; cuts Supabase on every page. */
+/** Cross-request cache — bust with revalidateSiteSettings() after admin saves. */
 const getCachedSiteSettings = unstable_cache(
   fetchSiteSettings,
   ["site-settings-v1"],
-  { revalidate: 300 },
+  { revalidate: 300, tags: [SITE_SETTINGS_CACHE_TAG] },
 );
 
 export const getSiteSettings = cache(getCachedSiteSettings);
+
+export function revalidateSiteSettings() {
+  revalidateTag(SITE_SETTINGS_CACHE_TAG, { expire: 0 });
+}
