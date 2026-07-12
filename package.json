@@ -21,7 +21,8 @@
     "seed:admin": "node scripts/seed-platform-admin.mjs",
     "seed:fellowmart": "node scripts/seed-fellowmart-catalog.mjs",
     "cf:push-secrets": "node scripts/push-cloudflare-secrets.mjs",
-    "cf:check-env": "node scripts/check-cloudflare-env.mjs"
+    "cf:check-env": "node scripts/check-cloudflare-env.mjs",
+    "cf:github-secrets": "node scripts/print-github-secrets-checklist.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

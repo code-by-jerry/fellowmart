@@ -1,9 +1,7 @@
 import { Suspense } from "react";
-import { cookies } from "next/headers";
 import { UserLoginForm } from "./UserLoginForm";
 import {
   resolveCustomerStoreSlug,
-  storeSlugCookieOptions,
   storeSlugFromPathname,
 } from "@/lib/tenant/active-store";
 import { getStorefrontContext } from "@/lib/tenant/storefront-context";
@@ -18,12 +16,6 @@ export default async function UserLoginPage({
   const { next } = await searchParams;
   const fromNext = storeSlugFromPathname(next ?? "");
   const slug = await resolveCustomerStoreSlug(fromNext);
-
-  if (fromNext) {
-    const cookieStore = await cookies();
-    const cookie = storeSlugCookieOptions(fromNext);
-    cookieStore.set(cookie.name, cookie.value, cookie.options);
-  }
 
   const storefront = await getStorefrontContext(slug);
   const platform = await getSiteSettings();

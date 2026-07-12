@@ -113,6 +113,18 @@ export async function middleware(request: NextRequest) {
     supabaseResponse.cookies.set(cookie.name, cookie.value, cookie.options);
   }
 
+  // /login?next=/store/... — persist store context for post-auth redirect
+  if (path === "/login") {
+    const loginNext = request.nextUrl.searchParams.get("next");
+    if (loginNext) {
+      const storeFromNext = storeSlugFromPathname(loginNext);
+      if (storeFromNext) {
+        const cookie = storeSlugCookieOptions(storeFromNext);
+        supabaseResponse.cookies.set(cookie.name, cookie.value, cookie.options);
+      }
+    }
+  }
+
   return supabaseResponse;
 }
 
