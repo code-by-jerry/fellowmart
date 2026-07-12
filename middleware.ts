@@ -72,12 +72,27 @@ export async function middleware(request: NextRequest) {
     );
   };
 
-  // Refresh customer session on all routes
-  const customerClient = createCustomerClient(request, applyCookies);
-  await customerClient.auth.getUser();
+  // API + portal routes run their own auth; skipping saves a Supabase round-trip per request.
+  const skipCustomerSessionRefresh =
+    path.startsWith("/api/") ||
+    path.startsWith("/business") ||
+    path.startsWith("/admin");
 
-  // Protect /admin routes (login only is public)
-  if (path.startsWith("/admin") && !path.startsWith("/admin/login")) {
+  if (!skipCustomerSessionRefresh) {
+    const customerClient = createCustomerClient(request, applyCookies);
+    await customerClient.auth.getUser();
+  }
+
+  // Dashboard layout performs full admin auth + profile check.
+  const skipAdminMiddlewareAuth =
+    path.startsWith("/admin/login") ||
+    path.startsWith("/admin/register") ||
+    path.startsWith("/admin/dashboard");
+
+  if (
+    path.startsWith("/admin") &&
+    !skipAdminMiddlewareAuth
+  ) {
     const adminClient = createAdminSessionClient(request, applyCookies);
     const {
       data: { user },

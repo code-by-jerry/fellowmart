@@ -1,4 +1,3 @@
-import { requireTenantManager } from "@/lib/auth/business-access";
 import { AdminPanel } from "@/components/admin/admin-ui";
 import { isRazorpayEnabled } from "@/lib/payments/razorpay-config";
 import { CreditCard } from "lucide-react";
@@ -8,7 +7,8 @@ export default async function BusinessPaymentsPage({
 }: {
   params: Promise<{ tenantSlug: string }>;
 }) {
-  await requireTenantManager((await params).tenantSlug);
+  // Auth enforced in business/[tenantSlug]/layout.tsx
+  await params;
   const enabled = isRazorpayEnabled();
 
   return (

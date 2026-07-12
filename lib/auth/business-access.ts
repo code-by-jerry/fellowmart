@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import {
@@ -7,7 +8,8 @@ import {
 } from "@/lib/business/provision-tenant";
 import type { TenantMembershipRole } from "@/lib/types/business";
 
-export async function requireBusinessUser() {
+/** Per-request cache — layout + page must not each hit Supabase auth. */
+const getBusinessUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -19,7 +21,9 @@ export async function requireBusinessUser() {
   }
 
   return { supabase, user };
-}
+});
+
+export const requireBusinessUser = cache(async () => getBusinessUser());
 
 export async function getBusinessSession() {
   const supabase = await createClient();
@@ -33,8 +37,8 @@ export async function getBusinessSession() {
   return { supabase, user, tenants };
 }
 
-export async function requireTenantManager(tenantSlug: string) {
-  const { supabase, user } = await requireBusinessUser();
+export const requireTenantManager = cache(async (tenantSlug: string) => {
+  const { supabase, user } = await getBusinessUser();
   const access = await getTenantAccess(supabase, user.id, tenantSlug);
 
   if (!access || !canManageTenant(access.role)) {
@@ -42,7 +46,7 @@ export async function requireTenantManager(tenantSlug: string) {
   }
 
   return { supabase, user, ...access };
-}
+});
 
 export async function requireTenantRole(
   tenantSlug: string,
