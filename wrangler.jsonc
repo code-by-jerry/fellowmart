@@ -21,7 +21,7 @@
     "binding": "IMAGES"
   },
   "vars": {
-    "NEXT_PUBLIC_APP_URL": "https://fellowmart.buildofy.workers.dev",
-    "NEXT_PUBLIC_SITE_URL": "https://fellowmart.buildofy.workers.dev"
+    "NEXT_PUBLIC_APP_URL": "https://fellomart.builddock.website",
+    "NEXT_PUBLIC_SITE_URL": "https://fellomart.builddock.website"
   }
 }

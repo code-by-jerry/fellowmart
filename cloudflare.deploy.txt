@@ -31,6 +31,6 @@
 #   Push to master triggers .github/workflows/deploy-cloudflare.yml
 
 # After first deploy:
-#   1. Supabase → Auth → Site URL + Redirect: https://YOUR-DOMAIN/auth/callback
-#   2. Razorpay → Webhook: https://YOUR-DOMAIN/api/webhooks/razorpay
+#   1. Supabase → Auth → Site URL + Redirect: https://fellomart.builddock.website/auth/callback
+#   2. Razorpay → Webhook: https://fellomart.builddock.website/api/webhooks/razorpay
 #   3. npm run cf:push-secrets  (sync .env.local secrets to Worker locally)
