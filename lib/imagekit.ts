@@ -1,15 +1,20 @@
-import ImageKit from '@imagekit/nodejs'
+import ImageKit from "@imagekit/nodejs";
 
-if (!process.env.IMAGEKIT_PRIVATE_KEY) {
-  throw new Error('Missing IMAGEKIT_PRIVATE_KEY environment variable')
-}
+let client: ImageKit | null = null;
 
 /**
- * Singleton ImageKit client — server-side only.
- * Never import this in client components.
+ * ImageKit client — server-side only. Lazy-init so `next build` does not
+ * require secrets at module load time (they are available at runtime on Workers).
  */
-const imagekit = new ImageKit({
-  privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-})
+export function getImageKitClient(): ImageKit {
+  const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error("Missing IMAGEKIT_PRIVATE_KEY environment variable");
+  }
 
-export default imagekit
+  if (!client) {
+    client = new ImageKit({ privateKey });
+  }
+
+  return client;
+}

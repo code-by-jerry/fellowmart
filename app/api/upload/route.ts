@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/utils/supabase/admin-server'
-import imagekit from '@/lib/imagekit'
+import { getImageKitClient } from '@/lib/imagekit'
 
 const MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     const buffer = await file.arrayBuffer()
     const uint8 = new Uint8Array(buffer)
 
-    const result = await imagekit.files.upload({
+    const result = await getImageKitClient().files.upload({
       file: new File([uint8], file.name, { type: file.type }),
       fileName: file.name,
       folder: `/${folder}`,
